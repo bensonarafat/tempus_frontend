@@ -1,40 +1,42 @@
 import { createRouter, createWebHistory } from 'vue-router'
+import { authGuard, adminGuard, guestGuard } from './guards'
 import HomeView from '../views/HomeView.vue'
 import LoginView from '@/views/auth/LoginView.vue'
-import ForgetPasswordView from '@/views/auth/ForgetPasswordView.vue'
-import { supabase } from '@/lib/superbase_service'
+import ForgotPasswordView from '@/views/auth/ForgotPasswordView.vue'
+import DashboardView from '@/views/DashboardView.vue'
 
 const router = createRouter({
-  history: createWebHistory(import.meta.env.BASE_URL),
+  history: createWebHistory(import.meta.env.VITE_BASE_URL),
   routes: [
     {
       path: '/',
       name: 'home',
       component: HomeView,
-      meta: {reqiresAuth: true},
+    },
+    {
+      path: '/dashboard',
+      name: 'dashboard',
+      component: DashboardView,
+      beforeEnter: authGuard,
     },
     {
       path: '/login',
       name: 'login',
-      component: LoginView
+      component: LoginView,
+      beforeEnter: guestGuard,
     },
     {
-      path: '/forget-password',
-      name:'forgetPassword',
-      component: ForgetPasswordView
+      path: '/forgot-password',
+      name:'forgotPassword',
+      component: ForgotPasswordView,
+      beforeEnter: guestGuard,
     },
   ],
 })
 
 // Navigation guard
 router.beforeEach( async(to, from, next) => {
-  if(to.matched.some(record => record.meta.requireAuth)) {
-    const {data: {session}} = await supabase.auth.getSession()
-    if(!session) {
-      next('/login')
-    }else{
-      next()
-    }
-  }
+  console.log(`Navigating from ${from.path} to ${to.path}`)
+  next()
 })
 export default router

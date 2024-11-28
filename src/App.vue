@@ -1,6 +1,4 @@
-<script lang="ts">
-import { useAuthStore } from './store/auth'
-const authStore = useAuthStore()
+<script setup lang="ts">
 </script>
 <template>
   <router-view></router-view>

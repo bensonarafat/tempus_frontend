@@ -2,5 +2,5 @@
 </script>
 
 <template>
-  <main></main>
+  <main>Dashboard Vue</main>
 </template>
