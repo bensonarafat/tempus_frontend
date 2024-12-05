@@ -74,22 +74,20 @@ export const useCategoryStore = defineStore('category', {
       if (!imageUrl) return
 
       this.loading = true
-      this.error = null
+      this.error = ''
 
       try {
         // Extract the file path from the public URL
-        const urlParts = imageUrl.split('/')
-        const filePath = urlParts.slice(urlParts.indexOf('category-images')).join('/')
-
+        const fileName = imageUrl.split('/').pop()
+        if (!fileName) return
         // Delete the image from storage
-        const { error } = await supabase.storage.from('category-images').remove([filePath])
+        const { error } = await supabase.storage.from('categories').remove([fileName])
 
         if (error) throw error
 
         return true
       } catch (err: any) {
         this.error = err.message || 'Failed to delete image'
-        console.error('Image Delete Error:', err)
         return false
       } finally {
         this.loading = false
