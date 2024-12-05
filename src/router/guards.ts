@@ -1,18 +1,20 @@
 import { useAuthStore } from "@/stores/modules/auth"
 import { useUserStore } from "@/stores/modules/user"
 import {supabase} from '@/services/supabase'
+
 // Check if user is authenticated
-export const authGuard = async (to, from, next) => {
+export const authGuard = async (to : any, from : any, next :any) => {
   const authStore = useAuthStore()
   const userStore = useUserStore()
 
   try {
     // Get current user from supabase
     const {data: {user}} = await supabase.auth.getUser()
-
     if(user) {
       // User is authenticated
       // fetch user profile if not already loaded
+
+
       if(!authStore.isAuthenticated) {
         authStore.session = await supabase.auth.getSession()
         authStore.isAuthenticated = true
@@ -29,7 +31,7 @@ export const authGuard = async (to, from, next) => {
 
 
 // Admin only route guard
-export const adminGuard = async (to, from, next) => {
+export const adminGuard = async (to : any, from : any, next: any) => {
   const userStore = useUserStore();
 
   try {
@@ -54,12 +56,12 @@ export const adminGuard = async (to, from, next) => {
 
 
 // Guest-only routes (for login/signup)
-export const guestGuard = async (to, from, next) => {
-  try {
-    const {data: {user} } = await supabase.auth.getUser()
+export const guestGuard = async (to : any, from : any , next : any) => {
+  const authStore = useAuthStore();
 
-    if(user) {
-      next("/")
+  try {
+    if(await authStore.checkCurrentAuthStatus()) {
+      next("/dashboard")
     }else{
       next()
     }

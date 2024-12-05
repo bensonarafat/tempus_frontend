@@ -3,7 +3,6 @@ import { useAuthStore } from '@/stores/modules/auth'
 import logo from '@/assets/images/logo-background.png'
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
-import { errorMessages } from 'vue/compiler-sfc'
 
 // Component state
 const email = ref('')
@@ -188,7 +187,7 @@ const handleForgotPassword = () => {
                 id="email"
                 class="bg-gray-50 border border-gray-300 text-gray-900 rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
                 placeholder="name@example.com"
-                required=""
+                required
               />
             </div>
             <div>
@@ -204,7 +203,7 @@ const handleForgotPassword = () => {
                 id="password"
                 placeholder="••••••••"
                 class="bg-gray-50 border border-gray-300 text-gray-900 rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
-                required=""
+                required
               />
             </div>
             <div class="flex items-center justify-between">
@@ -215,7 +214,7 @@ const handleForgotPassword = () => {
                     aria-describedby="remember"
                     type="checkbox"
                     class="w-4 h-4 border border-gray-300 rounded bg-gray-50 focus:ring-3 focus:ring-primary-300 dark:bg-gray-700 dark:border-gray-600 dark:focus:ring-primary-600 dark:ring-offset-gray-800"
-                    required=""
+                    required
                     v-model="rememberMe"
                   />
                 </div>

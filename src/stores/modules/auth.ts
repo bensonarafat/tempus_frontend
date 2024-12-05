@@ -114,8 +114,12 @@ export const useAuthStore = defineStore('auth', {
       this.error = null
       try {
         const { data, error } = await supabase.auth.signInWithOAuth({
-          provider: provider
+          provider: provider,
+          options: {
+            redirectTo: import.meta.env.VITE_BASE_URL
+          }
         })
+
         if (error) {
           throw error
         }
@@ -136,20 +140,12 @@ export const useAuthStore = defineStore('auth', {
       }
     },
 
-    // Listen to auth state changes
-    initAuthListener() {
-      supabase.auth.onAuthStateChange((event, session) => {
-        switch (event) {
-          case 'SIGNED_IN':
-            this.session = session
-            this.isAuthenticated = false
-            break;
-          case 'SIGNED_OUT':
-            this.session = null
-            this.isAuthenticated = false
-            break;
-        }
-      })
+    async checkCurrentAuthStatus() {
+      const { data: { session } } = await supabase.auth.getSession()
+      this.session = session
+      this.user = session?.user ?? null
+      this.isAuthenticated = !!session
+      return this.isAuthenticated
     },
   }
 })
