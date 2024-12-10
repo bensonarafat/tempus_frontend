@@ -3,11 +3,13 @@ import { supabase } from '@/services/supabase'
 import { type Category, type CategoryDto } from '@/stores/interfaces/category.interface'
 import { v4 as uuidv4 } from 'uuid'
 import { generateSlug } from '@/stores/helpers/string-utils'
+import { useImageUpload } from '../helpers/image-upload-utils'
+const { uploadImage, uploadError, deleteImage } = useImageUpload()
 
 interface CategoryState {
   categories: Category[]
   loading: boolean
-  error: string
+  error: string | null
   success: string
 }
 
@@ -32,78 +34,20 @@ export const useCategoryStore = defineStore('category', {
       this.success = ''
     },
 
-    // Upload image to Supabase storage
-    async uploadCategoryImage(file: File, path?: string): Promise<string | null> {
-      if (!file) {
-        this.error = 'No file provided'
-        return null
-      }
-
-      this.loading = true
-      this.error = ''
-
-      try {
-        // Generate a unique filename
-        const fileExt = file.name.split('.').pop()
-        const fileName = `${uuidv4()}.${fileExt}`
-        const filePath = path || fileName
-
-        // Upload the file
-        const { data, error: uploadError } = await supabase.storage
-          .from('categories')
-          .upload(filePath, file)
-
-        if (uploadError) throw uploadError
-
-        // Get public URL
-        const {
-          data: { publicUrl },
-        } = supabase.storage.from('categories').getPublicUrl(filePath)
-
-        return publicUrl
-      } catch (err: any) {
-        this.error = err.message || 'Failed to upload image'
-        return null
-      } finally {
-        this.loading = false
-      }
-    },
-
-    // Delete an existing category image
-    async deleteCategoryImage(imageUrl: string) {
-      if (!imageUrl) return
-
-      this.loading = true
-      this.error = ''
-
-      try {
-        // Extract the file path from the public URL
-        const fileName = imageUrl.split('/').pop()
-        if (!fileName) return
-        // Delete the image from storage
-        const { error } = await supabase.storage.from('categories').remove([fileName])
-
-        if (error) throw error
-
-        return true
-      } catch (err: any) {
-        this.error = err.message || 'Failed to delete image'
-        return false
-      } finally {
-        this.loading = false
-      }
-    },
-
-    // Add a new category with optional image upload
+    // Add a new category with image upload
     async addCategory(categoryData: Omit<CategoryDto, 'id' | 'created_at'>, imageFile: File) {
       this.loading = true
       this.error = ''
       let imageUrl: string | undefined | null
       try {
-        // Upload image if provided
-        imageUrl = await this.uploadCategoryImage(imageFile)
+        // Upload image
+        imageUrl = await uploadImage(imageFile, 'categories')
+        if (!imageUrl) {
+          this.error = uploadError.value
+          return
+        }
 
-        // Prepare category data with image URL if available
+        // Prepare category data with image URL
         const finalCategoryData = {
           ...categoryData,
           image_url: imageUrl,
@@ -122,7 +66,7 @@ export const useCategoryStore = defineStore('category', {
       } catch (err: any) {
         // If image was uploaded but category insert failed, delete the image
         if (imageUrl) {
-          await this.deleteCategoryImage(imageUrl)
+          await deleteImage(imageUrl, 'categories')
         }
         this.error = err.message || 'Failed to add category'
       } finally {
@@ -147,7 +91,6 @@ export const useCategoryStore = defineStore('category', {
         return this.categories
       } catch (err: any) {
         this.error = err.message || 'Failed to fetch categories'
-        console.error('Fetch Categories Error:', err)
         return []
       } finally {
         this.loading = false
@@ -197,7 +140,7 @@ export const useCategoryStore = defineStore('category', {
 
         // If the category had an image, delete it from storage
         if (category?.image_url) {
-          await this.deleteCategoryImage(category.image_url)
+          await deleteImage(category.image_url, 'categories')
         }
 
         // Remove the category from the local store
@@ -230,11 +173,15 @@ export const useCategoryStore = defineStore('category', {
         if (newImageFile) {
           // Delete existing image if it exists
           if (existingCategory?.image_url) {
-            await this.deleteCategoryImage(existingCategory.image_url)
+            await deleteImage(existingCategory.image_url, 'categories')
           }
 
-          // Upload new image
-          newImageUrl = await this.uploadCategoryImage(newImageFile)
+          // Upload image
+          newImageUrl = await uploadImage(newImageFile, 'categories')
+          if (!newImageUrl) {
+            this.error = uploadError.value
+            return
+          }
         }
 
         // Prepare update data with new image URL if available

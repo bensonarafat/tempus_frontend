@@ -1,6 +1,6 @@
 <script lang="ts" setup>
 import { onMounted, ref } from 'vue'
-
+import { useRoute, useRouter } from 'vue-router'
 import { useCategoryStore } from '@/stores/modules/category'
 import { useEventStore } from '@/stores/modules/events'
 import { type Category } from '@/stores/interfaces/category.interface'
@@ -10,23 +10,23 @@ import SuccessAlert from '@/components/SuccessAlert.vue'
 import ErrorAlert from '@/components/ErrorAlert.vue'
 import QuillEditorComponent from '@/components/QuillEditorComponent.vue'
 import ImageUploader from '@/components/ImageUploader.vue'
-import { useUserStore } from '@/stores/modules/user'
-import type { User } from '@/stores/interfaces/user.interface'
+
+const route = useRoute()
+const router = useRouter()
 
 const categoryStore = useCategoryStore()
 const eventStore = useEventStore()
-const userStore = useUserStore()
 
 // Create a reference to the child component
 const quillEditorRef = ref<InstanceType<typeof QuillEditorComponent> | null>(null)
 const imageUploaderRef = ref<InstanceType<typeof ImageUploader> | null>(null)
 const googlePlaceAutoCompleteRef = ref<InstanceType<typeof GooglePlaceAutoComplete> | null>(null)
 
+const categories = ref<Category[]>([])
+const loading = ref(false)
 const error = ref<null | string>('')
 const success = ref('')
 const imageFile = ref(null as File | null)
-const loading = ref(false)
-const categories = ref<Category[]>([])
 
 // Input fields
 const title = ref<string | null>(null)
@@ -77,15 +77,6 @@ const handleSubmit = async () => {
   if (!select_category.value) {
     error.value = 'You need to select a category'
   }
-  if (imageFile.value == null) {
-    error.value = 'Event Image is needed'
-    return
-  }
-
-  await userStore.fetchCurrentUser()
-  const user: User | null = userStore.currentUser
-
-  if (!user) throw Error('Oops, there was an error try again later')
   // Prepare the event data object
   const eventDto = {
     title: title.value!,
@@ -103,38 +94,67 @@ const handleSubmit = async () => {
     lat: addressData.value?.coordinates.lat,
     lng: addressData.value?.coordinates.lng,
     address: addressData.value?.formattedAddress,
-    author_id: user.id,
   }
-
-  await eventStore.addEvent(eventDto, imageFile.value)
+  const id = route.params.id as any
+  await eventStore.updateEvent(id, eventDto, imageFile.value)
 
   loading.value = false
   error.value = eventStore.error
   success.value = eventStore.success
-
-  if (!error.value || success.value) {
-    resetForm()
+  if (!error.value) {
+    // Redirect to category list or details page
+    router.push('/event/manage')
   }
 }
 
-const resetForm = () => {
-  title.value = null
-  start_date.value = null
-  end_date.value = null
-  content.value = null
-  important.value = null
-  select_category.value = null
-  source.value = null
-  quillEditorRef.value?.clearOrSetEditor('')
-  imageUploaderRef.value?.removeImage()
-  googlePlaceAutoCompleteRef.value?.clearInput()
-}
+const fetchEvent = async (id: number) => {
+  loading.value = true
+  try {
+    await eventStore.fetchEvent(id)
+    const fetchedEvent = eventStore.events.find((e) => e.id == id)
 
+    if (fetchedEvent) {
+      title.value = fetchedEvent.title
+      start_date.value = fetchedEvent.start_date
+      end_date.value = fetchedEvent.end_date ?? ''
+      source.value = fetchedEvent.source ?? ''
+      select_category.value = fetchedEvent.category_id
+      important.value = fetchedEvent.important
+
+      //others
+      quillEditorRef.value?.clearOrSetEditor(fetchedEvent.content)
+      content.value = fetchedEvent.content
+      imageUploaderRef.value?.setImagePreview(fetchedEvent.image_url)
+      googlePlaceAutoCompleteRef.value?.setAddress({
+        formattedAddress: fetchedEvent.address ?? '',
+        coordinates: {
+          lat: fetchedEvent.lat ?? 0,
+          lng: fetchedEvent.lng ?? 0,
+        },
+        parsedAddress: {
+          street: fetchedEvent.street ?? '',
+          city: fetchedEvent.city ?? '',
+          state: fetchedEvent.state ?? '',
+          postalCode: fetchedEvent.postal_code ?? '',
+          country: fetchedEvent.country ?? '',
+        },
+      })
+    } else {
+      error.value = 'Event not found'
+      router.push('/event/manage')
+    }
+  } catch (err) {
+    error.value = 'Failed to fetch event'
+  } finally {
+    loading.value = false
+  }
+}
 onMounted(() => {
+  const id = route.params.id as any
   fetchCategories()
+  fetchEvent(id)
 })
 </script>
-
 <template>
   <div>
     <div class="grid grid-cols-1 px-4 pt-6 dark:bg-gray-900">
@@ -195,13 +215,15 @@ onMounted(() => {
                   ></path>
                 </svg>
                 <span class="ml-1 text-gray-400 md:ml-2 dark:text-gray-500" aria-current="page"
-                  >Add</span
+                  >Update</span
                 >
               </div>
             </li>
           </ol>
         </nav>
-        <h1 class="text-xl font-semibold text-gray-900 sm:text-2xl dark:text-white">Add Event</h1>
+        <h1 class="text-xl font-semibold text-gray-900 sm:text-2xl dark:text-white">
+          Update Event
+        </h1>
       </div>
 
       <div class="">
@@ -366,7 +388,7 @@ onMounted(() => {
                       />
                     </svg>
                   </span>
-                  <span v-if="!loading"> Submit </span>
+                  <span v-if="!loading"> Update </span>
                 </button>
               </div>
             </div>

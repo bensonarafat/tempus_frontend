@@ -1,30 +1,30 @@
 import { defineStore } from 'pinia'
 import { supabase } from '@/services/supabase'
-import type { Event, EventDto, EventUpdateDto } from '@/stores/interfaces/event.interface'
+import type { People, PeopleCreateDto, PeopleUpdateDto } from '@/stores/interfaces/people.interface'
 import { useImageUpload } from '../helpers/image-upload-utils'
 import { generateSlug } from '@/stores/helpers/string-utils'
 
 const { uploadImage, uploadError, deleteImage } = useImageUpload()
 
-interface EventState {
-  events: Event[]
+interface PeopleState {
+  people: People[]
   loading: boolean
   error: string | null
   success: string
 }
 
-export const useEventStore = defineStore('event', {
-  state: (): EventState => ({
-    events: [],
+export const usePeopleStore = defineStore('people', {
+  state: (): PeopleState => ({
+    people: [],
     loading: false,
     error: '',
     success: '',
   }),
 
   getters: {
-    // Get a event by id
-    getEventById: (state) => {
-      return (id: number) => state.events.find((event) => event.id === id)
+    // Get people by id
+    getPeopleById: (state) => {
+      return (id: number) => state.people.find((e) => e.id === id)
     },
   },
 
@@ -35,56 +35,55 @@ export const useEventStore = defineStore('event', {
       this.success = ''
     },
 
-    // Add a new event with image upload
-    async addEvent(eventData: Omit<EventDto, 'id' | 'created_at'>, imageFile: File) {
+    // Add pople with image upload
+    async addPeople(peopleData: Omit<PeopleCreateDto, 'id' | 'created_at'>, imageFile: File) {
       this.loading = true
       this.error = null
       let imageUrl: string | undefined | null
 
       try {
         // Upload Image
-        imageUrl = await uploadImage(imageFile, 'events')
+        imageUrl = await uploadImage(imageFile, 'people')
         if (!imageUrl) {
           this.error = uploadError.value
           return
         }
 
-        // Prepare event data with image URL
+        // Prepare data with image URL
         const finalData = {
-          ...eventData,
+          ...peopleData,
           image_url: imageUrl,
-          slug: generateSlug(eventData.title),
+          slug: generateSlug(peopleData.name),
         }
 
-        // insert event
-        const { data, error } = await supabase.from('events').insert(finalData).select()
+        // insert
+        const { data, error } = await supabase.from('people').insert(finalData).select()
 
         if (error) throw error
 
         if (data) {
-          this.events.push(data[0])
+          this.people.push(data[0])
         }
 
-        this.success = 'Event Added'
+        this.success = 'People Added'
       } catch (err: any) {
         // if image was uploaded but data insert failed, delete the image
         if (imageUrl) {
-          await deleteImage(imageUrl, 'events')
+          await deleteImage(imageUrl, 'people')
         }
-        this.error = err.message || 'Failed to add event'
+        this.error = err.message || 'Failed to add people'
       } finally {
         this.loading = false
       }
     },
 
-    // Fetch all events
-    async fetchEvents() {
+    async fetchAllPeople() {
       this.loading = true
       this.error = ''
 
       try {
-        const { data: events, error } = await supabase
-          .from('events')
+        const { data: people, error } = await supabase
+          .from('people')
           .select(
             `*,  users (
             id,
@@ -96,66 +95,66 @@ export const useEventStore = defineStore('event', {
           .order('created_at', { ascending: false })
         if (error) throw error
 
-        this.events = events || []
-        return this.events
+        this.people = people || []
+        return this.people
       } catch (err: any) {
-        this.error = err.message || 'Failed to fetch events'
+        this.error = err.message || 'Failed to fetch people'
         return []
       } finally {
         this.loading = false
       }
     },
 
-    // Fetch a single event by ID
-    async fetchEvent(id: number) {
+    // Fetch a single people by Id
+    async fetchPeople(id: number) {
       this.loading = true
       this.error = ''
       try {
-        const { data, error } = await supabase.from('events').select('*').eq('id', id).single()
+        const { data, error } = await supabase.from('people').select('*').eq('id', id).single()
 
         if (error) throw error
 
-        // Update the specific event in the store or add if not exists
-        const existingIndex = this.events.findIndex((e) => e.id === id)
+        // Update the specific people in the store or add if not exists
+        const existingIndex = this.people.findIndex((e) => e.id === id)
         if (existingIndex !== -1) {
-          this.events[existingIndex] = data
+          this.people[existingIndex] = data
         } else {
-          this.events.push(data)
+          this.people.push(data)
         }
 
         return data
       } catch (err: any) {
-        this.error = err.message || 'Failed to fetch event'
+        this.error = err.message || 'Failed to fetch people'
         return null
       } finally {
         this.loading = false
       }
     },
 
-    // Delete
-    async deleteEvent(id: number) {
+    // delete
+    async deletePeople(id: number) {
       this.loading = true
       this.error = ''
 
       try {
         // First, find the vent to get it's image url
-        const event = this.events.find((e) => e.id === id)
+        const people = this.people.find((e) => e.id === id)
 
-        // Delete the event
-        const { error } = await supabase.from('events').delete().eq('id', id)
+        // Delete
+        const { error } = await supabase.from('people').delete().eq('id', id)
 
         if (error) throw error
 
-        // if the event had an image, delete it from storage
-        if (event?.image_url) {
-          await deleteImage(event.image_url, 'events')
+        // if the had an image, delete it from storage
+        if (people?.image_url) {
+          await deleteImage(people.image_url, 'people')
         }
 
         // Remove the even from the local store
-        this.events = this.events.filter((e) => e.id !== id)
+        this.people = this.people.filter((e) => e.id !== id)
         return true
       } catch (err: any) {
-        this.error = err.message || 'Failed to delete event'
+        this.error = err.message || 'Failed to delete people'
         return false
       } finally {
         this.loading = false
@@ -163,27 +162,27 @@ export const useEventStore = defineStore('event', {
     },
 
     // Update
-    async updateEvent(
+    async updatePeople(
       id: number,
-      updateData: Partial<Omit<EventUpdateDto, 'id' | 'created_at'>>,
+      updateData: Partial<Omit<PeopleUpdateDto, 'id' | 'created_at'>>,
       newImageFile?: File | null,
     ) {
       this.loading = true
       this.error = ''
       try {
-        // final the exisitng event to handle image replacement
-        const existingEvent = this.events.find((e) => e.id === id)
+        // final the exisitng people to handle image replacement
+        const existingPeople = this.people.find((e) => e.id === id)
 
         // Upload new image if provided
         let newImageUrl
         if (newImageFile) {
           // Delete exisiting image if it exists
-          if (existingEvent?.image_url) {
-            await deleteImage(existingEvent.image_url, 'events')
+          if (existingPeople?.image_url) {
+            await deleteImage(existingPeople.image_url, 'people')
           }
 
           // Upload image
-          newImageUrl = await uploadImage(newImageFile, 'events')
+          newImageUrl = await uploadImage(newImageFile, 'people')
           if (!newImageUrl) {
             this.error = uploadError.value
             return
@@ -192,11 +191,11 @@ export const useEventStore = defineStore('event', {
 
         // Prepare update data with new image URL if available
         const finalUpdateData = newImageUrl
-          ? { ...updateData, image_url: newImageUrl, slug: generateSlug(updateData.title!) }
+          ? { ...updateData, image_url: newImageUrl, slug: generateSlug(updateData.name!) }
           : updateData
-        // Update event
+        // Update people
         const { data, error } = await supabase
-          .from('events')
+          .from('people')
           .update(finalUpdateData)
           .eq('id', id)
           .select()
@@ -204,16 +203,16 @@ export const useEventStore = defineStore('event', {
         if (error) throw error
 
         if (data) {
-          // Update the event in the local store
-          const existingIndex = this.events.findIndex((e) => e.id === id)
+          // Update the people in the local store
+          const existingIndex = this.people.findIndex((e) => e.id === id)
           if (existingIndex !== -1) {
-            this.events[existingIndex] = data[0]
+            this.people[existingIndex] = data[0]
           }
         }
 
         return data ? data[0] : null
       } catch (err: any) {
-        this.error = err.message || 'Failed to update event'
+        this.error = err.message || 'Failed to update people'
         return null
       } finally {
         this.loading = false

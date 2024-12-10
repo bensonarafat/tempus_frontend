@@ -1,54 +1,38 @@
 <script lang="ts" setup>
 import { onMounted, ref } from 'vue'
 
-import { useCategoryStore } from '@/stores/modules/category'
-import { useEventStore } from '@/stores/modules/events'
-import { type Category } from '@/stores/interfaces/category.interface'
-import { type AddressSelectedPayload } from '@/stores/interfaces/address.interface'
-import GooglePlaceAutoComplete from '@/components/GooglePlaceAutoComplete.vue'
+import { usePeopleStore } from '@/stores/modules/people'
 import SuccessAlert from '@/components/SuccessAlert.vue'
 import ErrorAlert from '@/components/ErrorAlert.vue'
 import QuillEditorComponent from '@/components/QuillEditorComponent.vue'
 import ImageUploader from '@/components/ImageUploader.vue'
 import { useUserStore } from '@/stores/modules/user'
 import type { User } from '@/stores/interfaces/user.interface'
+import { useRoute, useRouter } from 'vue-router'
 
-const categoryStore = useCategoryStore()
-const eventStore = useEventStore()
+const route = useRoute()
+const router = useRouter()
+
+const peopleStore = usePeopleStore()
 const userStore = useUserStore()
-
 // Create a reference to the child component
 const quillEditorRef = ref<InstanceType<typeof QuillEditorComponent> | null>(null)
 const imageUploaderRef = ref<InstanceType<typeof ImageUploader> | null>(null)
-const googlePlaceAutoCompleteRef = ref<InstanceType<typeof GooglePlaceAutoComplete> | null>(null)
-
 const error = ref<null | string>('')
 const success = ref('')
 const imageFile = ref(null as File | null)
 const loading = ref(false)
-const categories = ref<Category[]>([])
 
 // Input fields
-const title = ref<string | null>(null)
-const start_date = ref<string | null>(null)
-const end_date = ref<string | null>(null)
-const source = ref<string | null>(null)
-const select_category = ref<number | null>(0)
+const name = ref<string | null>(null)
+const birth_date = ref<string | null>(null)
+const death_date = ref<string | null>(null)
 const content = ref<string | null>(null)
-const addressData = ref<AddressSelectedPayload | null>(null)
-const important = ref<number | null>(0)
-
-const fetchCategories = async () => {
-  await categoryStore.fetchCategories()
-  categories.value = categoryStore.categories
-}
+const nationality = ref<string | null>(null)
+const profession = ref<string | null>(null)
 
 const handleEditorContent = (data: string | null) => {
   content.value = data
-}
-
-const handleAddressPicker = (data: AddressSelectedPayload) => {
-  addressData.value = data
 }
 
 const handleImagePicker = (data: File) => {
@@ -57,84 +41,76 @@ const handleImagePicker = (data: File) => {
 
 const handleSubmit = async () => {
   loading.value = true
-  error.value = categoryStore.error
-  success.value = categoryStore.success
-  if (!title.value) {
-    error.value = 'Title is a required field'
+  error.value = peopleStore.error
+  success.value = peopleStore.success
+  if (!name.value) {
+    error.value = 'Name is a required field'
   }
-  if (!start_date.value) {
-    error.value = 'Start Date is required'
-  }
-  if (!select_category.value) {
-    error.value = 'Category is required'
+  if (!birth_date.value) {
+    error.value = 'Birth Date is required'
   }
   if (!content.value) {
     error.value = 'Event content is required'
   }
-  if (!important.value) {
-    error.value = 'Event importance is required'
-  }
-  if (!select_category.value) {
-    error.value = 'You need to select a category'
-  }
-  if (imageFile.value == null) {
-    error.value = 'Event Image is needed'
-    return
-  }
-
   await userStore.fetchCurrentUser()
   const user: User | null = userStore.currentUser
 
   if (!user) throw Error('Oops, there was an error try again later')
-  // Prepare the event data object
-  const eventDto = {
-    title: title.value!,
-    start_date: start_date.value!,
-    end_date: end_date.value,
-    category_id: select_category.value!,
-    source: source.value,
-    content: content.value!,
-    important: important.value!,
-    street: addressData.value?.parsedAddress.street,
-    city: addressData.value?.parsedAddress.city,
-    state: addressData.value?.parsedAddress.state,
-    postal_code: addressData.value?.parsedAddress.postalCode,
-    country: addressData.value?.parsedAddress.country,
-    lat: addressData.value?.coordinates.lat,
-    lng: addressData.value?.coordinates.lng,
-    address: addressData.value?.formattedAddress,
+  // Prepare the data object
+  const peopleDto = {
+    name: name.value!,
+    birth_date: birth_date.value!,
+    death_date: death_date.value,
+    profession: profession.value,
+    nationality: nationality.value,
+    biography: content.value!,
     author_id: user.id,
   }
-
-  await eventStore.addEvent(eventDto, imageFile.value)
+  const id = route.params.id as any
+  await peopleStore.updatePeople(id, peopleDto, imageFile.value)
 
   loading.value = false
-  error.value = eventStore.error
-  success.value = eventStore.success
+  error.value = peopleStore.error
+  success.value = peopleStore.success
 
-  if (!error.value || success.value) {
-    resetForm()
+  if (!error.value) {
+    // Redirect to people list or details page
+    router.push('/event/people')
   }
 }
 
-const resetForm = () => {
-  title.value = null
-  start_date.value = null
-  end_date.value = null
-  content.value = null
-  important.value = null
-  select_category.value = null
-  source.value = null
-  quillEditorRef.value?.clearOrSetEditor('')
-  imageUploaderRef.value?.removeImage()
-  googlePlaceAutoCompleteRef.value?.clearInput()
-}
+const fetchPeople = async (id: number) => {
+  loading.value = true
+  try {
+    await peopleStore.fetchPeople(id)
+    const fetchedPeople = peopleStore.people.find((e) => e.id == id)
 
+    if (fetchedPeople) {
+      name.value = fetchedPeople.name
+      birth_date.value = fetchedPeople.birth_date ?? ''
+      death_date.value = fetchedPeople.death_date ?? ''
+      nationality.value = fetchedPeople.nationality ?? ''
+      profession.value = fetchedPeople.profession ?? ''
+
+      //others
+      quillEditorRef.value?.clearOrSetEditor(fetchedPeople.biography)
+      content.value = fetchedPeople.biography
+      imageUploaderRef.value?.setImagePreview(fetchedPeople.image_url)
+    } else {
+      error.value = 'Person not found'
+      router.push('/event/people')
+    }
+  } catch (err) {
+    error.value = 'Failed to fetch people'
+  } finally {
+    loading.value = false
+  }
+}
 onMounted(() => {
-  fetchCategories()
+  const id = route.params.id as any
+  fetchPeople(id)
 })
 </script>
-
 <template>
   <div>
     <div class="grid grid-cols-1 px-4 pt-6 dark:bg-gray-900">
@@ -176,7 +152,7 @@ onMounted(() => {
                 <a
                   href="#"
                   class="ml-1 text-gray-700 hover:text-primary-600 md:ml-2 dark:text-gray-300 dark:hover:text-white"
-                  >Event</a
+                  >People</a
                 >
               </div>
             </li>
@@ -201,7 +177,7 @@ onMounted(() => {
             </li>
           </ol>
         </nav>
-        <h1 class="text-xl font-semibold text-gray-900 sm:text-2xl dark:text-white">Add Event</h1>
+        <h1 class="text-xl font-semibold text-gray-900 sm:text-2xl dark:text-white">Add People</h1>
       </div>
 
       <div class="">
@@ -217,117 +193,81 @@ onMounted(() => {
               <label
                 for="title"
                 class="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
-                >Title</label
+                >Name</label
               >
               <input
-                v-model="title"
+                v-model="name"
                 type="text"
-                name="title"
-                id="title"
+                name="name"
+                id="name"
                 class="shadow-sm bg-gray-50 border border-gray-300 text-gray-900 sm:text-sm rounded-lg focus:ring-primary-500 focus:border-primary-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500"
-                placeholder="Event Title"
+                placeholder="Name"
                 required
               />
             </div>
             <div class="grid grid-cols-2 gap-4">
               <div class="mb-3">
                 <label
-                  for="start_date"
+                  for="birth_date"
                   class="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
-                  >Start Date</label
+                  >Birth Date</label
                 >
                 <input
-                  v-model="start_date"
+                  v-model="birth_date"
                   type="date"
-                  name="start_date"
-                  id="start_date"
+                  name="birth_date"
+                  id="birth_date"
                   class="shadow-sm bg-gray-50 border border-gray-300 text-gray-900 sm:text-sm rounded-lg focus:ring-primary-500 focus:border-primary-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500"
-                  placeholder="Start Date"
+                  placeholder="Birth Date"
                   required
                 />
               </div>
 
               <div class="mb-3">
                 <label
-                  for="end_date"
+                  for="death_date"
                   class="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
-                  >End Date</label
+                  >Death Date</label
                 >
                 <input
                   type="date"
-                  name="end_date"
-                  id="end_date"
-                  v-model="end_date"
+                  name="death_date"
+                  id="death_date"
+                  v-model="death_date"
                   class="shadow-sm bg-gray-50 border border-gray-300 text-gray-900 sm:text-sm rounded-lg focus:ring-primary-500 focus:border-primary-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500"
-                  placeholder="End Date"
+                  placeholder="Death Date"
                 />
               </div>
 
               <div class="mb-3">
                 <label
-                  for="category"
+                  for="nationality"
                   class="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
-                  >Category</label
-                >
-                <select
-                  v-model="select_category"
-                  id="category"
-                  class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
-                  required
-                >
-                  <option value="0" :selected="true">-- Select category --</option>
-                  <option
-                    v-for="category in categories"
-                    v-bind:key="category.id"
-                    :value="category.id"
-                  >
-                    {{ category.name }}
-                  </option>
-                </select>
-              </div>
-
-              <div class="mb-3">
-                <label
-                  for="important"
-                  class="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
-                  >Important</label
-                >
-                <select
-                  v-model="important"
-                  id="important"
-                  name="important"
-                  class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
-                  required
-                >
-                  <option value="0">-- Select priority --</option>
-                  <option value="1">Low Priority</option>
-                  <option value="2">Minor Important</option>
-                  <option value="3">Moderate Important</option>
-                  <option value="4">High Important</option>
-                  <option value="5">Critical Important</option>
-                </select>
-              </div>
-
-              <div class="mb-3">
-                <label
-                  for="source"
-                  class="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
-                  >Source</label
+                  >Nationality</label
                 >
                 <input
-                  v-model="source"
                   type="text"
-                  name="source"
-                  id="source"
+                  name="nationality"
+                  id="nationality"
+                  v-model="nationality"
                   class="shadow-sm bg-gray-50 border border-gray-300 text-gray-900 sm:text-sm rounded-lg focus:ring-primary-500 focus:border-primary-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500"
-                  placeholder="Event Source (Optional)"
+                  placeholder="Nationality"
                 />
               </div>
 
               <div class="mb-3">
-                <GooglePlaceAutoComplete
-                  ref="googlePlaceAutoCompleteRef"
-                  @address-selected="handleAddressPicker"
+                <label
+                  for="profession"
+                  class="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
+                  >Profession</label
+                >
+                <input
+                  type="text"
+                  name="profession"
+                  id="profession"
+                  v-model="profession"
+                  class="shadow-sm bg-gray-50 border border-gray-300 text-gray-900 sm:text-sm rounded-lg focus:ring-primary-500 focus:border-primary-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500"
+                  placeholder="Profession"
                 />
               </div>
             </div>
@@ -366,7 +306,7 @@ onMounted(() => {
                       />
                     </svg>
                   </span>
-                  <span v-if="!loading"> Submit </span>
+                  <span v-if="!loading"> Update </span>
                 </button>
               </div>
             </div>

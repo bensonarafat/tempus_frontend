@@ -9,7 +9,7 @@ const categoryStore = useCategoryStore()
 
 const loading = ref(false)
 const imagePreview = ref('')
-const error = ref('')
+const error = ref<null | string>('')
 const success = ref('')
 const imageFile = ref(null as File | null)
 const imageUrl = ref('')
@@ -53,7 +53,7 @@ const handleSubmit = async () => {
   error.value = categoryStore.error
   success.value = categoryStore.success
   if (!name.value) {
-    error.value = 'Name fill in all required fields'
+    error.value = 'Name field in all required fields'
   }
   if (imageFile.value == null) {
     error.value = 'Category Image is needed'
@@ -175,8 +175,8 @@ const resetForm = () => {
                 <input
                   v-model="name"
                   type="text"
-                  name="first-name"
-                  id="first-name"
+                  name="name"
+                  id="name"
                   class="shadow-sm bg-gray-50 border border-gray-300 text-gray-900 sm:text-sm rounded-lg focus:ring-primary-500 focus:border-primary-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500"
                   placeholder="Category Name"
                   required
@@ -184,14 +184,15 @@ const resetForm = () => {
               </div>
               <div class="mb-3">
                 <label
-                  for="last-name"
+                  for="description"
                   class="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
                   >Description</label
                 >
                 <input
                   type="text"
-                  name="last-name"
-                  id="last-name"
+                  name="description"
+                  id="description"
+                  v-model="description"
                   class="shadow-sm bg-gray-50 border border-gray-300 text-gray-900 sm:text-sm rounded-lg focus:ring-primary-500 focus:border-primary-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500"
                   placeholder="Description"
                 />

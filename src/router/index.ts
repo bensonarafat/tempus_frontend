@@ -19,6 +19,8 @@ import AddEventView from '@/views/events/AddEventView.vue'
 import ManageEventView from '@/views/events/ManageEventView.vue'
 import AddPeopleView from '@/views/events/people/AddPeopleView.vue'
 import ManagePeopleView from '@/views/events/people/ManagePeopleView.vue'
+import EditPeopleView from '@/views/events/people/EditPeopleView.vue'
+import EditEventView from '@/views/events/EditEventView.vue'
 
 // Resources
 import AddResourceView from '@/views/resources/AddResourceView.vue'
@@ -103,14 +105,24 @@ const router = createRouter({
       component: ManageEventView,
       beforeEnter: authGuard,
     },
-
+    {
+      path: '/event/edit/:id/:slug',
+      name: 'editEvent',
+      component: EditEventView,
+      beforeEnter: authGuard,
+    },
     {
       path: '/event/people/add',
       name: 'peopleAdd',
       component: AddPeopleView,
       beforeEnter: authGuard,
     },
-
+    {
+      path: '/event/people/edit/:id/:slug',
+      name: 'peopleEdit',
+      component: EditPeopleView,
+      beforeEnter: authGuard,
+    },
     {
       path: '/event/people',
       name: 'peopleManage',

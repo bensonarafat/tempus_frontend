@@ -262,7 +262,7 @@ onMounted(() => {
                       data-drawer-show="drawer-update-product-default"
                       aria-controls="drawer-update-product-default"
                       data-drawer-placement="right"
-                      class="inline-flex items-center px-3 py-2 text-sm font-medium text-center text-white rounded-lg bg-primary-700 hover:bg-primary-800 focus:ring-4 focus:ring-primary-300 dark:bg-primary-600 dark:hover:bg-primary-700 dark:focus:ring-primary-800"
+                      class="inline-flex items-center px-3 py-2 text-sm font-medium text-center text-red-700 dark:text-white rounded-lg focus:ring-4"
                     >
                       <svg
                         class="w-4 h-4 mr-2"
