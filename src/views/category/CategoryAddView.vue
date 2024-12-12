@@ -54,6 +54,7 @@ const handleSubmit = async () => {
   success.value = categoryStore.success
   if (!name.value) {
     error.value = 'Name field in all required fields'
+    return
   }
   if (imageFile.value == null) {
     error.value = 'Category Image is needed'

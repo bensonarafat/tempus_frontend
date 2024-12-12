@@ -1,8 +1,8 @@
 
-<script setup>
+<script setup lang="ts">
 import { ref } from 'vue'
 // Object to track which dropdowns are open
-const openDropdowns = ref({
+const openDropdowns = ref<any>({
   categories: false,
   events: false,
   users: false,
@@ -10,7 +10,7 @@ const openDropdowns = ref({
 })
 
 // Function to toggle dropdown visibility
-const toggleDropdown = (dropdownName) => {
+const toggleDropdown = (dropdownName: string) => {
   // Close all other dropdowns
   Object.keys(openDropdowns.value).forEach((key) => {
     if (key !== dropdownName) {
@@ -270,16 +270,16 @@ const toggleDropdown = (dropdownName) => {
                       >Add</RouterLink
                     >
                   </li>
-                  <li>
+                  <!-- <li>
                     <RouterLink
                       to="/users/roles"
                       class="flex items-center p-2 text-base text-gray-900 transition duration-75 rounded-lg pl-11 group hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-gray-700"
                       >Roles</RouterLink
                     >
-                  </li>
+                  </li> -->
                 </ul>
               </li>
-              <li>
+              <!-- <li>
                 <button
                   type="button"
                   class="flex items-center w-full p-2 text-base text-gray-900 transition duration-75 rounded-lg group hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-gray-700"
@@ -330,9 +330,9 @@ const toggleDropdown = (dropdownName) => {
                     >
                   </li>
                 </ul>
-              </li>
+              </li> -->
 
-              <li>
+              <!-- <li>
                 <RouterLink
                   to="/settings"
                   class="flex items-center p-2 text-base text-gray-900 rounded-lg hover:bg-gray-100 group dark:text-gray-200 dark:hover:bg-gray-700"
@@ -352,7 +352,7 @@ const toggleDropdown = (dropdownName) => {
                   </svg>
                   <span class="ml-3" sidebar-toggle-item>Settings</span>
                 </RouterLink>
-              </li>
+              </li> -->
             </ul>
           </div>
         </div>

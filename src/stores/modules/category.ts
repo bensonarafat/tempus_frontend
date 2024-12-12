@@ -203,7 +203,7 @@ export const useCategoryStore = defineStore('category', {
             this.categories[existingIndex] = data[0]
           }
         }
-
+        this.success = 'Category Updated'
         return data ? data[0] : null
       } catch (err: any) {
         this.error = err.message || 'Failed to update category'

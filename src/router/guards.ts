@@ -1,27 +1,32 @@
-import { useAuthStore } from "@/stores/modules/auth"
-import { useUserStore } from "@/stores/modules/user"
-import {supabase} from '@/services/supabase'
+import { useAuthStore } from '@/stores/modules/auth'
+import { useUserStore } from '@/stores/modules/user'
+import { supabase } from '@/services/supabase'
 
 // Check if user is authenticated
-export const authGuard = async (to : any, from : any, next :any) => {
+export const authGuard = async (to: any, from: any, next: any) => {
   const authStore = useAuthStore()
   const userStore = useUserStore()
 
   try {
     // Get current user from supabase
-    const {data: {user}} = await supabase.auth.getUser()
-    if(user) {
+    const {
+      data: { user },
+    } = await supabase.auth.getUser()
+    if (user) {
       // User is authenticated
       // fetch user profile if not already loaded
 
+      if (!authStore.isAuthenticated) {
+        const authSession = await supabase.auth.getSession()
+        if (authSession) {
+          authStore.session = (await supabase.auth.getSession()).data.session
+        }
 
-      if(!authStore.isAuthenticated) {
-        authStore.session = await supabase.auth.getSession()
         authStore.isAuthenticated = true
         await userStore.fetchCurrentUser()
       }
       next() // Allow navigation
-    }else{
+    } else {
       next('/login')
     }
   } catch (error) {
@@ -29,24 +34,25 @@ export const authGuard = async (to : any, from : any, next :any) => {
   }
 }
 
-
 // Admin only route guard
-export const adminGuard = async (to : any, from : any, next: any) => {
-  const userStore = useUserStore();
+export const adminGuard = async (to: any, from: any, next: any) => {
+  const userStore = useUserStore()
 
   try {
-    const {data: {user}} = await supabase.auth.getUser()
+    const {
+      data: { user },
+    } = await supabase.auth.getUser()
 
-    if(user) {
+    if (user) {
       await userStore.fetchCurrentUser()
 
       // Check if user is an admin
-      if(userStore.isAdmin) {
-        next(); // Allow navigation
-      }else{
+      if (userStore.isAdmin) {
+        next() // Allow navigation
+      } else {
         next('/unauthorized')
       }
-    }else{
+    } else {
       next('/login')
     }
   } catch (error) {
@@ -54,15 +60,14 @@ export const adminGuard = async (to : any, from : any, next: any) => {
   }
 }
 
-
 // Guest-only routes (for login/signup)
-export const guestGuard = async (to : any, from : any , next : any) => {
-  const authStore = useAuthStore();
+export const guestGuard = async (to: any, from: any, next: any) => {
+  const authStore = useAuthStore()
 
   try {
-    if(await authStore.checkCurrentAuthStatus()) {
-      next("/dashboard")
-    }else{
+    if (await authStore.checkCurrentAuthStatus()) {
+      next('/dashboard')
+    } else {
       next()
     }
   } catch (error) {

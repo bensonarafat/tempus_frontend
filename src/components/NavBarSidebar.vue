@@ -1,7 +1,17 @@
 <script lang="ts" setup>
+import { onMounted, ref } from 'vue'
+import default_avatar from '@/assets/images/avatar.png'
+import { useAuthStore } from '@/stores/modules/auth'
+import type { User } from '@/stores/interfaces/users.interface'
 import ColorModeSwitcher from '@/components/ColorModeSwitcher.vue'
 import SearchInput from '@/components/SearchInput.vue'
 import logo from '@/assets/images/logo-background.png'
+
+const authStore = useAuthStore()
+const currentUser = ref<User | null>(null)
+onMounted(() => {
+  currentUser.value = authStore.user
+})
 </script>
 <template>
   <div>
@@ -119,13 +129,13 @@ import logo from '@/assets/images/logo-background.png'
             </div>
 
             <!-- Notifications -->
-            <button
+            <!-- <button
               type="button"
               data-dropdown-toggle="notification-dropdown"
               class="p-2 text-gray-500 rounded-lg hover:text-gray-900 hover:bg-gray-100 dark:text-gray-400 dark:hover:text-white dark:hover:bg-gray-700"
             >
               <span class="sr-only">View notifications</span>
-              <!-- Bell icon -->
+
               <svg
                 class="w-6 h-6"
                 fill="currentColor"
@@ -136,9 +146,9 @@ import logo from '@/assets/images/logo-background.png'
                   d="M10 2a6 6 0 00-6 6v3.586l-.707.707A1 1 0 004 14h12a1 1 0 00.707-1.707L16 11.586V8a6 6 0 00-6-6zM10 18a3 3 0 01-3-3h6a3 3 0 01-3 3z"
                 ></path>
               </svg>
-            </button>
+            </button> -->
             <!-- Dropdown menu -->
-            <div
+            <!-- <div
               class="z-20 z-50 hidden max-w-sm my-4 overflow-hidden text-base list-none bg-white divide-y divide-gray-100 rounded shadow-lg dark:divide-gray-600 dark:bg-gray-700"
               id="notification-dropdown"
             >
@@ -340,15 +350,16 @@ import logo from '@/assets/images/logo-background.png'
                   View all
                 </div>
               </a>
-            </div>
+            </div> -->
+
             <!-- Apps -->
-            <button
+            <!-- <button
               type="button"
               data-dropdown-toggle="apps-dropdown"
               class="hidden p-2 text-gray-500 rounded-lg sm:flex hover:text-gray-900 hover:bg-gray-100 dark:text-gray-400 dark:hover:text-white dark:hover:bg-gray-700"
             >
               <span class="sr-only">View notifications</span>
-              <!-- Icon -->
+
               <svg
                 class="w-6 h-6"
                 fill="currentColor"
@@ -359,9 +370,9 @@ import logo from '@/assets/images/logo-background.png'
                   d="M5 3a2 2 0 00-2 2v2a2 2 0 002 2h2a2 2 0 002-2V5a2 2 0 00-2-2H5zM5 11a2 2 0 00-2 2v2a2 2 0 002 2h2a2 2 0 002-2v-2a2 2 0 00-2-2H5zM11 5a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V5zM11 13a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"
                 ></path>
               </svg>
-            </button>
+            </button> -->
             <!-- Dropdown menu -->
-            <div
+            <!-- <div
               class="z-20 z-50 hidden max-w-sm my-4 overflow-hidden text-base list-none bg-white divide-y divide-gray-100 rounded shadow-lg dark:bg-gray-700 dark:divide-gray-600"
               id="apps-dropdown"
             >
@@ -538,7 +549,7 @@ import logo from '@/assets/images/logo-background.png'
                   <div class="text-sm font-medium text-gray-900 dark:text-white">Logout</div>
                 </a>
               </div>
-            </div>
+            </div> -->
 
             <ColorModeSwitcher />
 
@@ -553,11 +564,18 @@ import logo from '@/assets/images/logo-background.png'
                   data-dropdown-toggle="dropdown-2"
                 >
                   <span class="sr-only">Open user menu</span>
-                  <img
-                    class="w-8 h-8 rounded-full"
-                    src="https://flowbite.com/docs/images/people/profile-picture-5.jpg"
-                    alt="user photo"
-                  />
+                  <div>
+                    <!-- <span v-if="currentUser.profile_picture_url">
+                      <img
+                        :src="currentUser.profile_picture_url"
+                        :alt="currentUser.fullname"
+                        class="h-10 w-10 rounded-full object-cover"
+                      />
+                    </span> -->
+                    <span>
+                      <img :src="default_avatar" class="h-10 w-10 rounded-full object-cover" />
+                    </span>
+                  </div>
                 </button>
               </div>
               <!-- Dropdown menu -->

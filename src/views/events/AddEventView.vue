@@ -61,21 +61,27 @@ const handleSubmit = async () => {
   success.value = categoryStore.success
   if (!title.value) {
     error.value = 'Title is a required field'
+    return
   }
   if (!start_date.value) {
     error.value = 'Start Date is required'
+    return
   }
   if (!select_category.value) {
     error.value = 'Category is required'
+    return
   }
   if (!content.value) {
     error.value = 'Event content is required'
+    return
   }
   if (!important.value) {
     error.value = 'Event importance is required'
+    return
   }
   if (!select_category.value) {
     error.value = 'You need to select a category'
+    return
   }
   if (imageFile.value == null) {
     error.value = 'Event Image is needed'

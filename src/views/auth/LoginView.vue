@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { useAuthStore } from '@/stores/modules/auth'
 import logo from '@/assets/images/logo-background.png'
-import { ref } from 'vue'
-import { useRouter } from 'vue-router'
+import { ref, onMounted } from 'vue'
+import { useRouter, useRoute } from 'vue-router'
 
 // Component state
 const email = ref('')
@@ -14,6 +14,7 @@ const isLoading = ref(false)
 // Composables and stores
 const authStore = useAuthStore()
 const router = useRouter()
+const route = useRoute()
 
 // Login methods
 const handleGoogleLogin = async () => {
@@ -65,7 +66,7 @@ const handleSubmit = async () => {
     }
     const result = await authStore.login(email.value, password.value)
     if (result.success) {
-      // Redirect to dashboard or home page
+      // Redirect to dashboard
       router.push('/dashboard')
     } else {
       // Handle login failure
@@ -73,7 +74,6 @@ const handleSubmit = async () => {
     }
   } catch (err) {
     error.value = 'An unexpected error occurred. Please try again.'
-    console.error('Login error:', err)
   } finally {
     isLoading.value = false
   }
@@ -82,6 +82,18 @@ const handleSubmit = async () => {
 const handleForgotPassword = () => {
   router.push('/forgot-password')
 }
+
+onMounted(() => {
+  const errorParam: any = route.query.error
+
+  if (errorParam) {
+    // Decode the URI component to handle special characters
+    const decodedError = decodeURIComponent(errorParam)
+
+    // Set the error message
+    error.value = decodedError
+  }
+})
 </script>
 
 <template>
@@ -200,6 +212,7 @@ const handleForgotPassword = () => {
                 type="password"
                 name="password"
                 v-model="password"
+                autocomplete="false"
                 id="password"
                 placeholder="••••••••"
                 class="bg-gray-50 border border-gray-300 text-gray-900 rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"

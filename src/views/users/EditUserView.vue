@@ -1,35 +1,26 @@
+
 <script lang="ts" setup>
 import { onMounted, ref } from 'vue'
-
-import { usePeopleStore } from '@/stores/modules/people'
-import SuccessAlert from '@/components/SuccessAlert.vue'
-import ErrorAlert from '@/components/ErrorAlert.vue'
-import QuillEditorComponent from '@/components/QuillEditorComponent.vue'
-import ImageUploader from '@/components/ImageUploader.vue'
+import { useRoute, useRouter } from 'vue-router'
 import { useUserStore } from '@/stores/modules/user'
 import type { User } from '@/stores/interfaces/user.interface'
+import SuccessAlert from '@/components/SuccessAlert.vue'
+import ErrorAlert from '@/components/ErrorAlert.vue'
+import ImageUploader from '@/components/ImageUploader.vue'
 
-const peopleStore = usePeopleStore()
 const userStore = useUserStore()
-// Create a reference to the child component
-const quillEditorRef = ref<InstanceType<typeof QuillEditorComponent> | null>(null)
+
+const route = useRoute()
+const router = useRouter()
+
 const imageUploaderRef = ref<InstanceType<typeof ImageUploader> | null>(null)
+
+const loading = ref(false)
+const imageFile = ref(null as File | null)
 const error = ref<null | string>('')
 const success = ref('')
-const imageFile = ref(null as File | null)
-const loading = ref(false)
-
-// Input fields
-const name = ref<string | null>(null)
-const birth_date = ref<string | null>(null)
-const death_date = ref<string | null>(null)
-const content = ref<string | null>(null)
-const nationality = ref<string | null>(null)
-const profession = ref<string | null>(null)
-
-const handleEditorContent = (data: string | null) => {
-  content.value = data
-}
+const fullname = ref<string | null>(null)
+const phone_number = ref<string | null>(null)
 
 const handleImagePicker = (data: File) => {
   imageFile.value = data
@@ -37,61 +28,51 @@ const handleImagePicker = (data: File) => {
 
 const handleSubmit = async () => {
   loading.value = true
-  error.value = peopleStore.error
-  success.value = peopleStore.success
-  if (!name.value) {
-    error.value = 'Name is a required field'
-    return
-  }
-  if (!birth_date.value) {
-    error.value = 'Birth Date is required'
-    return
-  }
-  if (!content.value) {
-    error.value = 'Event content is required'
-    return
-  }
-  if (imageFile.value == null) {
-    error.value = 'Event Image is needed'
+  error.value = userStore.error
+  success.value = userStore.success
+  if (!fullname.value) {
+    error.value = 'Full name field is required'
     return
   }
 
-  await userStore.fetchCurrentUser()
-  const user: User | null = userStore.currentUser
-
-  if (!user) throw Error('Oops, there was an error try again later')
-  // Prepare the data object
-  const peopleDto = {
-    name: name.value!,
-    birth_date: birth_date.value!,
-    death_date: death_date.value,
-    profession: profession.value,
-    nationality: nationality.value,
-    biography: content.value!,
-    author_id: user.id,
+  // Prepare the user data object
+  const userDto = {
+    fullname: fullname.value,
+    phone_number: phone_number.value,
   }
-
-  await peopleStore.addPeople(peopleDto, imageFile.value)
+  const id = route.params.id as any
+  await userStore.updateUser(id, userDto, imageFile.value)
 
   loading.value = false
-  error.value = peopleStore.error
-  success.value = peopleStore.success
+  error.value = userStore.error
+  success.value = userStore.success
+}
+const fetchUser = async (id: number) => {
+  loading.value = true
+  try {
+    await userStore.getUser(id)
+    const fetchedUser = userStore.users.find((e) => e.id == id)
 
-  if (!error.value || success.value) {
-    resetForm()
+    if (fetchedUser) {
+      fullname.value = fetchedUser.fullname
+      phone_number.value = fetchedUser.phone_number ?? ''
+      if (fetchedUser.profile_picture_url != '' || fetchedUser.profile_picture_url != null) {
+        imageUploaderRef.value?.setImagePreview(fetchedUser.profile_picture_url!)
+      }
+    } else {
+      error.value = 'User not found'
+      router.push('/users/manage')
+    }
+  } catch (err) {
+    error.value = 'Failed to fetch user'
+  } finally {
+    loading.value = false
   }
 }
-
-const resetForm = () => {
-  name.value = null
-  birth_date.value = null
-  death_date.value = null
-  profession.value = null
-  nationality.value = null
-  content.value = null
-  quillEditorRef.value?.clearOrSetEditor('')
-  imageUploaderRef.value?.removeImage()
-}
+onMounted(() => {
+  const id = route.params.id as any
+  fetchUser(id)
+})
 </script>
 <template>
   <div>
@@ -134,7 +115,7 @@ const resetForm = () => {
                 <a
                   href="#"
                   class="ml-1 text-gray-700 hover:text-primary-600 md:ml-2 dark:text-gray-300 dark:hover:text-white"
-                  >People</a
+                  >User</a
                 >
               </div>
             </li>
@@ -159,7 +140,7 @@ const resetForm = () => {
             </li>
           </ol>
         </nav>
-        <h1 class="text-xl font-semibold text-gray-900 sm:text-2xl dark:text-white">Add People</h1>
+        <h1 class="text-xl font-semibold text-gray-900 sm:text-2xl dark:text-white">Add User</h1>
       </div>
 
       <div class="">
@@ -171,100 +152,47 @@ const resetForm = () => {
             <ErrorAlert :error="error" />
             <!-- Success Alert -->
             <SuccessAlert :success="success" />
-            <div class="mb-3">
-              <label
-                for="title"
-                class="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
-                >Name</label
-              >
-              <input
-                v-model="name"
-                type="text"
-                name="name"
-                id="name"
-                class="shadow-sm bg-gray-50 border border-gray-300 text-gray-900 sm:text-sm rounded-lg focus:ring-primary-500 focus:border-primary-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500"
-                placeholder="Name"
-                required
-              />
-            </div>
-            <div class="grid grid-cols-2 gap-4">
+
+            <div class="flex flex-col">
               <div class="mb-3">
                 <label
-                  for="birth_date"
+                  for="name"
                   class="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
-                  >Birth Date</label
+                  >Full name</label
                 >
                 <input
-                  v-model="birth_date"
-                  type="date"
-                  name="birth_date"
-                  id="birth_date"
+                  v-model="fullname"
+                  type="text"
+                  name="fullname"
+                  id="fullname"
                   class="shadow-sm bg-gray-50 border border-gray-300 text-gray-900 sm:text-sm rounded-lg focus:ring-primary-500 focus:border-primary-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500"
-                  placeholder="Birth Date"
+                  placeholder="Full Name"
                   required
                 />
               </div>
 
               <div class="mb-3">
                 <label
-                  for="death_date"
+                  for="phone_number"
                   class="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
-                  >Death Date</label
-                >
-                <input
-                  type="date"
-                  name="death_date"
-                  id="death_date"
-                  v-model="death_date"
-                  class="shadow-sm bg-gray-50 border border-gray-300 text-gray-900 sm:text-sm rounded-lg focus:ring-primary-500 focus:border-primary-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500"
-                  placeholder="Death Date"
-                />
-              </div>
-
-              <div class="mb-3">
-                <label
-                  for="nationality"
-                  class="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
-                  >Nationality</label
+                  >Phone number</label
                 >
                 <input
                   type="text"
-                  name="nationality"
-                  id="nationality"
-                  v-model="nationality"
+                  name="phone_number"
+                  id="phone_number"
+                  v-model="phone_number"
                   class="shadow-sm bg-gray-50 border border-gray-300 text-gray-900 sm:text-sm rounded-lg focus:ring-primary-500 focus:border-primary-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500"
-                  placeholder="Nationality"
+                  placeholder="Phone Number"
                 />
               </div>
+              <!-- Image Upload Section -->
+              <ImageUploader
+                ref="imageUploaderRef"
+                label="Avatar"
+                @image-picked="handleImagePicker"
+              />
 
-              <div class="mb-3">
-                <label
-                  for="profession"
-                  class="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
-                  >Profession</label
-                >
-                <input
-                  type="text"
-                  name="profession"
-                  id="profession"
-                  v-model="profession"
-                  class="shadow-sm bg-gray-50 border border-gray-300 text-gray-900 sm:text-sm rounded-lg focus:ring-primary-500 focus:border-primary-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500"
-                  placeholder="Profession"
-                />
-              </div>
-            </div>
-
-            <ImageUploader
-              ref="imageUploaderRef"
-              label="Feature Image"
-              @image-picked="handleImagePicker"
-            />
-
-            <div class="mb-3">
-              <QuillEditorComponent ref="quillEditorRef" @data-change="handleEditorContent" />
-            </div>
-
-            <div class="mb-3">
               <div class="col-span-6 sm:col-full">
                 <button
                   class="text-white bg-teal-600 focus:ring-4 font-medium rounded-lg text-sm px-5 py-2.5 text-center dark:bg-teal-600 dark:hover:bg-teal-600 dark:focus:ring-teal-600"

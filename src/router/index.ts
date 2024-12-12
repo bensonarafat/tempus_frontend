@@ -5,6 +5,7 @@ import HomeView from '../views/HomeView.vue'
 // Auth
 import LoginView from '@/views/auth/LoginView.vue'
 import ForgotPasswordView from '@/views/auth/ForgotPasswordView.vue'
+import OAuthCallbackView from '@/views/auth/OAuthCallbackView.vue'
 
 import DashboardView from '@/views/DashboardView.vue'
 import SettingsView from '@/views/SettingsView.vue'
@@ -25,19 +26,21 @@ import EditEventView from '@/views/events/EditEventView.vue'
 // Resources
 import AddResourceView from '@/views/resources/AddResourceView.vue'
 import ManageResourceView from '@/views/resources/ManageResourceView.vue'
+import EditResourceView from '@/views/resources/EditResourceView.vue'
 
 // Users
 import AddUserView from '@/views/users/AddUserView.vue'
 import ManageUserView from '@/views/users/ManageUserView.vue'
 import AddRoleView from '@/views/users/roles/AddRoleView.vue'
 import ManageRolesView from '@/views/users/roles/ManageRolesView.vue'
+import EditUserView from '@/views/users/EditUserView.vue'
 
 // Profile
 import ChangePasswordView from '@/views/profile/ChangePasswordView.vue'
 import ProfileView from '@/views/profile/ProfileView.vue'
 
 const router = createRouter({
-  history: createWebHistory(import.meta.env.VITE_BASE_URL),
+  history: createWebHistory(),
   routes: [
     {
       path: '/',
@@ -63,6 +66,11 @@ const router = createRouter({
       name: 'forgotPassword',
       component: ForgotPasswordView,
       beforeEnter: guestGuard,
+    },
+    {
+      path: '/oauth-callback',
+      name: 'oauthCallback',
+      component: OAuthCallbackView,
     },
     {
       path: '/settings',
@@ -142,6 +150,12 @@ const router = createRouter({
       beforeEnter: authGuard,
     },
     {
+      path: '/resources/edit/:id',
+      name: 'resourceEdit',
+      component: EditResourceView,
+      beforeEnter: authGuard,
+    },
+    {
       path: '/users/manage',
       name: 'usersManage',
       component: ManageUserView,
@@ -151,6 +165,12 @@ const router = createRouter({
       path: '/users/add',
       name: 'usersAdd',
       component: AddUserView,
+      beforeEnter: authGuard,
+    },
+    {
+      path: '/users/edit/:id',
+      name: 'usersEdit',
+      component: EditUserView,
       beforeEnter: authGuard,
     },
     {

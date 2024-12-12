@@ -5,7 +5,7 @@ import { defineStore } from 'pinia'
 interface LoginResult {
   success: boolean
   message?: string
-  session?: Session
+  session?: Session | null
 }
 
 interface AuthState {
@@ -116,7 +116,8 @@ export const useAuthStore = defineStore('auth', {
         const { data, error } = await supabase.auth.signInWithOAuth({
           provider: provider,
           options: {
-            redirectTo: import.meta.env.VITE_BASE_URL,
+            scopes: 'email',
+            redirectTo: import.meta.env.VITE_BASE_URL + 'oauth-callback',
           },
         })
 
@@ -141,14 +142,98 @@ export const useAuthStore = defineStore('auth', {
     },
 
     async checkCurrentAuthStatus() {
-      const {
-        data: { session },
-      } = await supabase.auth.getSession()
-
-      this.session = session
-      this.user = session?.user ?? null
-      this.isAuthenticated = !!session
-      return this.isAuthenticated
+      try {
+        const {
+          data: { session },
+          error,
+        } = await supabase.auth.getSession()
+        if (error) {
+          return false
+        }
+        if (session) {
+          const check = await this.checkIfUserAlreadySignUp(session.user.id)
+          if (!check) {
+            this.session = null
+            this.user = null
+            this.error = 'Email adress not found, try using another or contact support'
+            return false
+          }
+        }
+        this.session = session
+        this.user = session?.user ?? null
+        this.isAuthenticated = !!session
+        return this.isAuthenticated
+      } catch (error) {
+        return false
+      }
     },
+    async checkIfUserAlreadySignUp(id?: string | null) {
+      if (!id) {
+        await this.logout()
+        return false
+      }
+      const { error } = await supabase.from('users').select('*').eq('uuid', id).single()
+      if (error) {
+        await this.logout()
+        await this.deleteAuth(id)
+        return false
+      }
+      return true
+    },
+
+    async deleteAuth(id?: string | null) {
+      await supabase.auth.admin.deleteUser(id!)
+    },
+    // async initAuthListener() {
+    //   supabase.auth.onAuthStateChange(async (event, currentSession) => {
+    //     // Update local state
+    //     this.session = currentSession
+    //     this.user = currentSession?.user || null
+    //     this.isAuthenticated = !!currentSession
+
+    //     if (event == 'INITIAL_SESSION') {
+    //     } else if (event === 'SIGNED_IN') {
+    //       // handle sign in event
+    //       this.isAuthenticated = true
+    //     } else if (event === 'SIGNED_OUT') {
+    //       window.localStorage.removeItem('oauth_provider_token')
+    //       window.localStorage.removeItem('oauth_provider_refresh_token')
+    //       // Reset local state
+    //       this.user = null
+    //       this.session = null
+    //       this.isAuthenticated = false
+    //     } else if (event === 'PASSWORD_RECOVERY') {
+    //       // handle password recovery event
+    //       console.log('Event Passsword')
+    //     } else if (event === 'TOKEN_REFRESHED') {
+    //       // handle token refreshed event
+    //       console.log('Event Token referesh')
+    //     } else if (event === 'USER_UPDATED') {
+    //       // handle user updated event
+    //       console.log('Event User updated')
+    //     }
+
+    //     // Handle OAuth tokens
+    //     if (currentSession && currentSession.provider_token) {
+    //       await this.checkIfUserAlreadySignUp(currentSession.user.id)
+    //       window.localStorage.setItem('oauth_provider_token', currentSession.provider_token)
+    //       console.log('OAuth Provider token', currentSession.provider_token)
+    //     }
+
+    //     if (currentSession && currentSession.provider_refresh_token) {
+    //       window.localStorage.setItem(
+    //         'oauth_provider_refresh_token',
+    //         currentSession.provider_refresh_token,
+    //       )
+    //       console.log('OAuth Provider refresh token', currentSession.provider_refresh_token)
+    //     }
+    //   })
+    // },
   },
 })
+
+//Plugin to initialize auth listener
+export function setupAuthPlugin(app: any) {
+  const authStore = useAuthStore()
+  // authStore.initAuthListener()
+}

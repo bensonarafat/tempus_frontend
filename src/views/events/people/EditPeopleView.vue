@@ -45,12 +45,15 @@ const handleSubmit = async () => {
   success.value = peopleStore.success
   if (!name.value) {
     error.value = 'Name is a required field'
+    return
   }
   if (!birth_date.value) {
     error.value = 'Birth Date is required'
+    return
   }
   if (!content.value) {
     error.value = 'Event content is required'
+    return
   }
   await userStore.fetchCurrentUser()
   const user: User | null = userStore.currentUser

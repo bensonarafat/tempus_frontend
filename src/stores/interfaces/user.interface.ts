@@ -3,29 +3,36 @@ export type UserStatus = 'active' | 'inactive' | 'suspended'
 
 export interface User {
   id: number
-  email: string
-  username: string
-  role: UserRole
-  token?: string
   fullname: string
-  dataOfBirth?: Date
-  gender?: string
-  profilePictureUrl?: string
-  phoneNumber?: string
+  role: UserRole
+  username: string
+  email: string
+  phone_number?: string
+  profile_picture_url?: string
   status: UserStatus
-  emailVerified: boolean
-  street: string
-  city: string
-  state: string
-  postalCode: string
-  country: string
-  lastLogin?: Date
-  createdAt: Date
-  updatedAt: Date
+  is_verified: boolean
+  date_of_birth?: string
+  gender?: string
+  email_notifications?: boolean
+  sms_notifications?: boolean
+  last_login?: string
+  uuid: string
+  created_at: string
+  updated_at: string
 }
 
 // DTO (Date Transfer Object) for user creation
-export interface CreateUserDto {}
+export interface CreateUserDto {
+  fullname: string
+  email: string
+  username: string
+  phone_number?: string | null
+  role: string
+  password: string
+}
 
 // DTO for user update
-export interface UpdateUserDto {}
+export interface UpdateUserDto {
+  fullname: string
+  phone_number?: string | null
+}

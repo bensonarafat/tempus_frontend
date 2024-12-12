@@ -35,7 +35,7 @@ export const usePeopleStore = defineStore('people', {
       this.success = ''
     },
 
-    // Add pople with image upload
+    // Add people with image upload
     async addPeople(peopleData: Omit<PeopleCreateDto, 'id' | 'created_at'>, imageFile: File) {
       this.loading = true
       this.error = null
@@ -209,7 +209,7 @@ export const usePeopleStore = defineStore('people', {
             this.people[existingIndex] = data[0]
           }
         }
-
+        this.success = 'People Updated'
         return data ? data[0] : null
       } catch (err: any) {
         this.error = err.message || 'Failed to update people'

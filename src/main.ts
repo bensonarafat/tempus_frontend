@@ -6,6 +6,7 @@ import router from './router'
 import { createPinia } from 'pinia'
 import { QuillEditor } from '@vueup/vue-quill'
 import '@vueup/vue-quill/dist/vue-quill.snow.css'
+import { setupAuthPlugin } from '@/stores/modules/auth'
 
 const pinia = createPinia()
 const app = createApp(App)
@@ -25,6 +26,9 @@ const globalOptions = {
 // set default globalOptions prop
 QuillEditor.props.globalOptions.default = () => globalOptions
 // register QuillEditor component
+
+// Set up auth plugin
+setupAuthPlugin(app)
 
 app.component('QuillEditor', QuillEditor)
 app.mount('#app')

@@ -1,57 +1,25 @@
-<script lang="ts" setup>
-import { ref, onMounted, watch } from 'vue'
+<script setup lang="ts">
+import { onMounted, ref } from 'vue'
 import { useAuthStore } from '@/stores/modules/auth'
-import SideBar from '@/components/SideBar.vue'
-import NavBarSidebar from './components/NavBarSidebar.vue'
-import Footer from './components/Footer.vue'
-import { useRoute } from 'vue-router'
+import { useRouter } from 'vue-router'
 
-const isAuthenticated = ref(false)
-const loading = ref(false)
-const isHomePage = ref(true)
 const authStore = useAuthStore()
-const route = useRoute()
+const isAuthenticated = ref<boolean>(false)
+const router = useRouter()
 
-const checkIfHomePage = () => {
-  isHomePage.value = route.path === '/'
-}
 onMounted(async () => {
-  loading.value = true
   isAuthenticated.value = await authStore.checkCurrentAuthStatus()
-
-  loading.value = false
-  checkIfHomePage()
+  if (isAuthenticated.value) {
+    router.push('/dashboard')
+  } else {
+    router.push('/login?error=' + authStore.error)
+  }
 })
-
-// Watch for route changes to update isHomePage
-watch(() => route.path, checkIfHomePage)
 </script>
 
 <template>
   <main>
-    <div v-if="!loading">
-      <div v-if="isAuthenticated && !isHomePage">
-        <div>
-          <NavBarSidebar />
-          <SideBar />
-        </div>
-
-        <div class="flex pt-16 overflow-hidden bg-gray-50 dark:bg-gray-900">
-          <div
-            id="main-content"
-            class="relative w-full h-full overflow-y-auto bg-gray-50 lg:ml-64 dark:bg-gray-900 min-h-screen"
-          >
-            <router-view></router-view>
-            <Footer />
-          </div>
-        </div>
-      </div>
-
-      <div v-else>
-        <router-view></router-view>
-      </div>
-    </div>
-    <div v-else class="fixed inset-0 flex items-center justify-center bg-white dark:bg-gray-900">
+    <div class="fixed inset-0 flex items-center justify-center bg-white dark:bg-gray-900">
       <svg
         aria-hidden="true"
         class="w-12 h-12 text-gray-200 animate-spin dark:text-gray-600 fill-blue-600"
@@ -71,4 +39,3 @@ watch(() => route.path, checkIfHomePage)
     </div>
   </main>
 </template>
-

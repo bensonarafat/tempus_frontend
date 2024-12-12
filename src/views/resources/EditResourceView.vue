@@ -1,35 +1,33 @@
 <script lang="ts" setup>
-import { onMounted, ref } from 'vue'
-
-import { usePeopleStore } from '@/stores/modules/people'
+import { nextTick, onMounted, ref, watch } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
+import { useResourceStore } from '@/stores/modules/resource'
+import ImageUploader from '@/components/ImageUploader.vue'
 import SuccessAlert from '@/components/SuccessAlert.vue'
 import ErrorAlert from '@/components/ErrorAlert.vue'
-import QuillEditorComponent from '@/components/QuillEditorComponent.vue'
-import ImageUploader from '@/components/ImageUploader.vue'
+import { useEventStore } from '@/stores/modules/events'
+import type { Event } from '@/stores/interfaces/event.interface'
 import { useUserStore } from '@/stores/modules/user'
-import type { User } from '@/stores/interfaces/user.interface'
 
-const peopleStore = usePeopleStore()
-const userStore = useUserStore()
-// Create a reference to the child component
-const quillEditorRef = ref<InstanceType<typeof QuillEditorComponent> | null>(null)
+const route = useRoute()
+const router = useRouter()
+
 const imageUploaderRef = ref<InstanceType<typeof ImageUploader> | null>(null)
+const eventStore = useEventStore()
+const resourceStore = useResourceStore()
+const userStore = useUserStore()
 const error = ref<null | string>('')
 const success = ref('')
 const imageFile = ref(null as File | null)
 const loading = ref(false)
 
-// Input fields
-const name = ref<string | null>(null)
-const birth_date = ref<string | null>(null)
-const death_date = ref<string | null>(null)
-const content = ref<string | null>(null)
-const nationality = ref<string | null>(null)
-const profession = ref<string | null>(null)
-
-const handleEditorContent = (data: string | null) => {
-  content.value = data
-}
+const searchQuery = ref<string>('')
+const eventId = ref<number | null>(null)
+const searchResults = ref<Event[]>([])
+const isDropdownVisible = ref(false)
+const source = ref<string | null>(null)
+const media_type = ref<string | null>('')
+const youtubeUrl = ref<string>('')
 
 const handleImagePicker = (data: File) => {
   imageFile.value = data
@@ -37,62 +35,119 @@ const handleImagePicker = (data: File) => {
 
 const handleSubmit = async () => {
   loading.value = true
-  error.value = peopleStore.error
-  success.value = peopleStore.success
-  if (!name.value) {
-    error.value = 'Name is a required field'
-    return
-  }
-  if (!birth_date.value) {
-    error.value = 'Birth Date is required'
-    return
-  }
-  if (!content.value) {
-    error.value = 'Event content is required'
-    return
-  }
-  if (imageFile.value == null) {
-    error.value = 'Event Image is needed'
+  error.value = resourceStore.error
+  success.value = resourceStore.success
+
+  if (eventId.value == null) {
+    error.value = 'Event is required'
     return
   }
 
-  await userStore.fetchCurrentUser()
-  const user: User | null = userStore.currentUser
+  if (media_type.value == '') {
+    error.value = 'Media type is required'
+    return
+  }
 
-  if (!user) throw Error('Oops, there was an error try again later')
+  if (media_type.value == 'image') {
+    if (imageFile.value == null) {
+      error.value = 'Image is needed'
+      return
+    }
+  }
+  if (media_type.value == 'youtube') {
+    if (youtubeUrl.value == '') {
+      error.value = 'Youtube url is required'
+      return
+    }
+  }
+
   // Prepare the data object
-  const peopleDto = {
-    name: name.value!,
-    birth_date: birth_date.value!,
-    death_date: death_date.value,
-    profession: profession.value,
-    nationality: nationality.value,
-    biography: content.value!,
-    author_id: user.id,
+  const resourceDto = {
+    event_id: eventId.value!,
+    media_type: media_type.value!,
+    source: source.value,
   }
-
-  await peopleStore.addPeople(peopleDto, imageFile.value)
+  const id = route.params.id as any
+  await resourceStore.updateResource(id, resourceDto, imageFile.value, youtubeUrl.value)
 
   loading.value = false
-  error.value = peopleStore.error
-  success.value = peopleStore.success
+  error.value = resourceStore.error
+  success.value = resourceStore.success
+}
 
-  if (!error.value || success.value) {
-    resetForm()
+watch(searchQuery, async (newQuery) => {
+  // clear results if query is empty
+  if (!newQuery) {
+    searchResults.value = []
+    isDropdownVisible.value = false
+    return
+  }
+
+  try {
+    await eventStore.search(newQuery)
+    // Update search results
+    searchResults.value = eventStore.events
+    isDropdownVisible.value = eventStore.events.length > 0
+  } catch (err) {
+    console.error('Unexpected error:', err)
+  }
+})
+
+// Handle selection of a result
+const selectResult = (result: Event) => {
+  // Clear search and hide dropdown
+  searchQuery.value = result.title
+  eventId.value = result.id
+  isDropdownVisible.value = false
+}
+
+// Handle dropdown visibility on focus
+const handleFocus = () => {
+  // Show dropdown if there are results
+  isDropdownVisible.value = searchResults.value.length > 0
+}
+
+// Handle dropdown hiding with nextTick to ensure proper timing
+const handleBlur = () => {
+  nextTick(() => {
+    isDropdownVisible.value = false
+  })
+}
+
+const fetchResource = async (id: number) => {
+  loading.value = true
+  try {
+    await resourceStore.fetchResource(id)
+    const fetchedResource = resourceStore.resources.find((e) => e.id == id)
+
+    if (fetchedResource) {
+      eventId.value = fetchedResource.event_id
+      source.value = fetchedResource.source ?? ''
+      media_type.value = fetchedResource.media_type ?? ''
+      searchQuery.value = fetchedResource.events.title
+      eventId.value = fetchedResource.event_id
+      if (media_type.value == 'youtube') {
+        youtubeUrl.value = fetchedResource.url ?? ''
+      } else {
+        //image
+        imageUploaderRef.value?.setImagePreview(fetchedResource.url)
+      }
+    } else {
+      error.value = 'Event not found'
+      router.push('/resources')
+    }
+  } catch (err) {
+    error.value = 'Failed to fetch event'
+  } finally {
+    loading.value = false
   }
 }
-
-const resetForm = () => {
-  name.value = null
-  birth_date.value = null
-  death_date.value = null
-  profession.value = null
-  nationality.value = null
-  content.value = null
-  quillEditorRef.value?.clearOrSetEditor('')
-  imageUploaderRef.value?.removeImage()
-}
+onMounted(() => {
+  const id = route.params.id as any
+  fetchResource(id)
+})
 </script>
+
 <template>
   <div>
     <div class="grid grid-cols-1 px-4 pt-6 dark:bg-gray-900">
@@ -134,7 +189,7 @@ const resetForm = () => {
                 <a
                   href="#"
                   class="ml-1 text-gray-700 hover:text-primary-600 md:ml-2 dark:text-gray-300 dark:hover:text-white"
-                  >People</a
+                  >Resource</a
                 >
               </div>
             </li>
@@ -159,7 +214,9 @@ const resetForm = () => {
             </li>
           </ol>
         </nav>
-        <h1 class="text-xl font-semibold text-gray-900 sm:text-2xl dark:text-white">Add People</h1>
+        <h1 class="text-xl font-semibold text-gray-900 sm:text-2xl dark:text-white">
+          Update Resource
+        </h1>
       </div>
 
       <div class="">
@@ -173,95 +230,95 @@ const resetForm = () => {
             <SuccessAlert :success="success" />
             <div class="mb-3">
               <label
-                for="title"
+                for="event"
                 class="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
-                >Name</label
+                >Search of event</label
               >
               <input
-                v-model="name"
+                v-model="searchQuery"
                 type="text"
-                name="name"
-                id="name"
+                name="event"
+                id="event"
                 class="shadow-sm bg-gray-50 border border-gray-300 text-gray-900 sm:text-sm rounded-lg focus:ring-primary-500 focus:border-primary-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500"
-                placeholder="Name"
-                required
+                placeholder="Search for event"
+                @focus="handleFocus"
+                @blur="handleBlur"
               />
+              <!-- Dropdown Results -->
+              <div
+                v-if="isDropdownVisible"
+                class="absolute z-10 w-full bg-white border rounded mt-1 max-h-60 overflow-y-auto"
+              >
+                <div
+                  v-for="result in searchResults"
+                  :key="result.id"
+                  class="p-2 hover:bg-gray-100 cursor-pointer"
+                  @mousedown="selectResult(result)"
+                >
+                  <!-- Customize this to show the specific fields you want -->
+                  {{ result.title }}
+                </div>
+              </div>
             </div>
             <div class="grid grid-cols-2 gap-4">
               <div class="mb-3">
                 <label
-                  for="birth_date"
+                  for="media_type"
                   class="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
-                  >Birth Date</label
+                  >Media Type</label
                 >
-                <input
-                  v-model="birth_date"
-                  type="date"
-                  name="birth_date"
-                  id="birth_date"
-                  class="shadow-sm bg-gray-50 border border-gray-300 text-gray-900 sm:text-sm rounded-lg focus:ring-primary-500 focus:border-primary-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500"
-                  placeholder="Birth Date"
+                <select
+                  v-model="media_type"
+                  id="media_type"
+                  name="media_type"
+                  class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
                   required
-                />
+                >
+                  <option value="">-- Select media type --</option>
+                  <option value="image">Image</option>
+                  <option value="youtube">Youtube</option>
+                </select>
               </div>
-
               <div class="mb-3">
                 <label
-                  for="death_date"
+                  for="source"
                   class="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
-                  >Death Date</label
+                  >Source</label
                 >
                 <input
-                  type="date"
-                  name="death_date"
-                  id="death_date"
-                  v-model="death_date"
-                  class="shadow-sm bg-gray-50 border border-gray-300 text-gray-900 sm:text-sm rounded-lg focus:ring-primary-500 focus:border-primary-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500"
-                  placeholder="Death Date"
-                />
-              </div>
-
-              <div class="mb-3">
-                <label
-                  for="nationality"
-                  class="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
-                  >Nationality</label
-                >
-                <input
+                  v-model="source"
                   type="text"
-                  name="nationality"
-                  id="nationality"
-                  v-model="nationality"
+                  name="source"
+                  id="source"
                   class="shadow-sm bg-gray-50 border border-gray-300 text-gray-900 sm:text-sm rounded-lg focus:ring-primary-500 focus:border-primary-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500"
-                  placeholder="Nationality"
-                />
-              </div>
-
-              <div class="mb-3">
-                <label
-                  for="profession"
-                  class="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
-                  >Profession</label
-                >
-                <input
-                  type="text"
-                  name="profession"
-                  id="profession"
-                  v-model="profession"
-                  class="shadow-sm bg-gray-50 border border-gray-300 text-gray-900 sm:text-sm rounded-lg focus:ring-primary-500 focus:border-primary-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500"
-                  placeholder="Profession"
+                  placeholder="Source (Optional)"
                 />
               </div>
             </div>
 
-            <ImageUploader
-              ref="imageUploaderRef"
-              label="Feature Image"
-              @image-picked="handleImagePicker"
-            />
+            <div v-if="media_type === 'image'" class="mb-3">
+              <ImageUploader
+                ref="imageUploaderRef"
+                label="Feature Image"
+                @image-picked="handleImagePicker"
+              />
+            </div>
 
-            <div class="mb-3">
-              <QuillEditorComponent ref="quillEditorRef" @data-change="handleEditorContent" />
+            <div v-if="media_type === 'youtube'" class="mb-3">
+              <label
+                for="youtube-url"
+                class="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
+                >YouTube URL</label
+              >
+              <input
+                v-model="youtubeUrl"
+                type="url"
+                name="youtube-url"
+                id="youtube-url"
+                class="shadow-sm bg-gray-50 border border-gray-300 text-gray-900 sm:text-sm rounded-lg focus:ring-primary-500 focus:border-primary-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500"
+                placeholder="Enter YouTube video URL"
+                required
+              />
             </div>
 
             <div class="mb-3">

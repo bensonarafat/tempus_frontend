@@ -210,10 +210,31 @@ export const useEventStore = defineStore('event', {
             this.events[existingIndex] = data[0]
           }
         }
-
+        this.success = 'Event Updated'
         return data ? data[0] : null
       } catch (err: any) {
         this.error = err.message || 'Failed to update event'
+        return null
+      } finally {
+        this.loading = false
+      }
+    },
+
+    // Search for events
+    async search(query: string) {
+      this.loading = true
+      this.error = ''
+      try {
+        const { data: events, error } = await supabase
+          .from('events')
+          .select('*')
+          .ilike('title', `%${query}%`)
+          .limit(10)
+        if (error) throw error
+        this.events = events || []
+        return this.events
+      } catch (err: any) {
+        this.error = err.message || 'Failed to search for event'
         return null
       } finally {
         this.loading = false
