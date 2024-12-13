@@ -33,7 +33,7 @@ const title = ref<string | null>(null)
 const start_date = ref<string | null>(null)
 const end_date = ref<string | null>(null)
 const source = ref<string | null>(null)
-const select_category = ref<number | null>(0)
+const select_categories = ref<number[]>([])
 const content = ref<string | null>(null)
 const addressData = ref<AddressSelectedPayload | null>(null)
 const important = ref<number | null>(0)
@@ -67,8 +67,8 @@ const handleSubmit = async () => {
     error.value = 'Start Date is required'
     return
   }
-  if (!select_category.value) {
-    error.value = 'Category is required'
+  if (select_categories.value.length === 0) {
+    error.value = 'At least one category is required'
     return
   }
   if (!content.value) {
@@ -77,10 +77,6 @@ const handleSubmit = async () => {
   }
   if (!important.value) {
     error.value = 'Event importance is required'
-    return
-  }
-  if (!select_category.value) {
-    error.value = 'You need to select a category'
     return
   }
   if (imageFile.value == null) {
@@ -97,7 +93,7 @@ const handleSubmit = async () => {
     title: title.value!,
     start_date: start_date.value!,
     end_date: end_date.value,
-    category_id: select_category.value!,
+    category_ids: JSON.stringify(select_categories.value),
     source: source.value,
     content: content.value!,
     important: important.value!,
@@ -129,7 +125,7 @@ const resetForm = () => {
   end_date.value = null
   content.value = null
   important.value = null
-  select_category.value = null
+  select_categories.value = []
   source.value = null
   quillEditorRef.value?.clearOrSetEditor('')
   imageUploaderRef.value?.removeImage()
@@ -276,8 +272,9 @@ onMounted(() => {
                   >Category</label
                 >
                 <select
-                  v-model="select_category"
+                  v-model="select_categories"
                   id="category"
+                  multiple
                   class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
                   required
                 >

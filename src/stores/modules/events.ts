@@ -48,7 +48,6 @@ export const useEventStore = defineStore('event', {
           this.error = uploadError.value
           return
         }
-
         // Prepare event data with image URL
         const finalData = {
           ...eventData,

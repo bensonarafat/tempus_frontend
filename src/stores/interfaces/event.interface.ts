@@ -1,3 +1,4 @@
+import type { Category } from './category.interface'
 import type { User } from './user.interface'
 
 export interface Event {
@@ -8,7 +9,6 @@ export interface Event {
   title: string
   slug: string
   content: string
-  category_id: number
   important: number
   source?: string
   street?: string
@@ -23,6 +23,7 @@ export interface Event {
   created_at: string
   updated_at: string
   users?: User
+  category_ids: string
 }
 
 // DTO (Data Transfer Object) for event creation
@@ -31,7 +32,7 @@ export interface EventDto {
   end_date?: string | null
   title: string
   content: string
-  category_id: number
+  category_ids: string
   important: number
   source?: string | null
   street?: string | null
@@ -50,7 +51,7 @@ export interface EventUpdateDto {
   start_date: string | null
   end_date?: string | null
   content: string
-  category_id: number
+  category_ids: string
   important: number
   source?: string | null
   street?: string | null

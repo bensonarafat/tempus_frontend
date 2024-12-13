@@ -29,7 +29,7 @@ coverage
 
 *.tsbuildinfo
 
-.env
-.env.production
-.vscode
-.vercel
+*.env
+*.env.production
+*.vscode
+*.vercel
