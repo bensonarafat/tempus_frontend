@@ -1,5 +1,8 @@
 <script lang="ts" setup>
 import EventsList from '@/components/EventsList.vue'
+import { useRouter } from 'vue-router'
+
+const router = useRouter()
 </script>
 <template>
   <div>

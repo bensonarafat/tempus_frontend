@@ -1,4 +1,8 @@
 {
+  "compilerOptions": {
+    "types": ["googlemaps"],
+    "typeRoots": ["./node_modules/@types"]
+  },
   "files": [],
   "references": [
     {

@@ -4,8 +4,8 @@
   "compilerOptions": {
     "composite": true,
     "tsBuildInfoFile": "./node_modules/.tmp/tsconfig.vitest.tsbuildinfo",
-
+    "typeRoots": ["./node_modules/@types"],
     "lib": [],
-    "types": ["node", "jsdom"]
+    "types": ["node", "jsdom", "googlemaps"]
   }
 }

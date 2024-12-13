@@ -2,7 +2,7 @@
 import { onMounted, ref } from 'vue'
 import default_avatar from '@/assets/images/avatar.png'
 import { useAuthStore } from '@/stores/modules/auth'
-import type { User } from '@/stores/interfaces/users.interface'
+import { type User } from '@supabase/supabase-js'
 import ColorModeSwitcher from '@/components/ColorModeSwitcher.vue'
 import SearchInput from '@/components/SearchInput.vue'
 import logo from '@/assets/images/logo-background.png'
@@ -44,8 +44,6 @@ const menuItems = [
 
 onMounted(() => {
   currentUser.value = authStore.user
-  currentUser.value
-  console.log('Current user', currentUser.value.email)
 })
 </script>
 <template>
@@ -210,7 +208,7 @@ onMounted(() => {
                       class="text-sm font-medium text-gray-900 truncate dark:text-gray-300"
                       role="none"
                     >
-                      {{ currentUser.email }}
+                      {{ currentUser?.email }}
                     </p>
                   </div>
 

@@ -3,7 +3,7 @@ import { onMounted, ref } from 'vue'
 import NavPagination from '@/components/NavPagination.vue'
 import { useRouter } from 'vue-router'
 import { useUserStore } from '@/stores/modules/user'
-import type { User } from '@/stores/interfaces/users.interface'
+import { type User } from '../../stores/interfaces/user.interface'
 import { getFormatedDate } from '@/stores/helpers/date-utils'
 import default_avatar from '@/assets/images/avatar.png'
 

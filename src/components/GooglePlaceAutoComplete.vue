@@ -1,6 +1,5 @@
 <script lang="ts" setup>
-import { onMounted, ref } from 'vue'
-import '@types/google.maps'
+import { ref, onMounted } from 'vue'
 import { type AddressSelectedPayload, type Address } from '@/stores/interfaces/address.interface'
 
 // Declare global Google Maps types to avoid TS errors
