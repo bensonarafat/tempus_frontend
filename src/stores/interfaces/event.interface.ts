@@ -23,7 +23,8 @@ export interface Event {
   created_at: string
   updated_at: string
   users?: User
-  category_ids: string
+  category_ids: number[]
+  day_month: string
 }
 
 // DTO (Data Transfer Object) for event creation
@@ -32,7 +33,7 @@ export interface EventDto {
   end_date?: string | null
   title: string
   content: string
-  category_ids: string
+  category_ids: number[]
   important: number
   source?: string | null
   street?: string | null
@@ -44,6 +45,7 @@ export interface EventDto {
   lng?: number | null
   address?: string | null
   author_id?: number
+  day_month: string
 }
 // DTO (Data Transfer Object) for event update
 export interface EventUpdateDto {
@@ -51,7 +53,7 @@ export interface EventUpdateDto {
   start_date: string | null
   end_date?: string | null
   content: string
-  category_ids: string
+  category_ids: number[]
   important: number
   source?: string | null
   street?: string | null
@@ -62,4 +64,5 @@ export interface EventUpdateDto {
   lat?: number | null
   lng?: number | null
   address?: string | null
+  day_month: string
 }

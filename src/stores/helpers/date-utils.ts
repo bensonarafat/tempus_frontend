@@ -40,3 +40,10 @@ export function getFormatedDate(date: string | undefined): string {
 
   return `${dayWithOrdinal} ${month}, ${parts[1].trim()}`
 }
+
+export function getMonthDay(dateString: string): string {
+  const date = new Date(dateString)
+  const month = (date.getMonth() + 1).toString().padStart(2, '0')
+  const day = date.getDate().toString().padStart(2, '0')
+  return `${month}-${day}`
+}

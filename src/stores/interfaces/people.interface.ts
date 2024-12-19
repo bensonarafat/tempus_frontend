@@ -14,6 +14,7 @@ export interface People {
   slug: string
   created_at?: string
   updated_at?: string
+  day_month: string
 }
 
 export interface PeopleCreateDto {
@@ -24,6 +25,7 @@ export interface PeopleCreateDto {
   profession?: string | null
   biography: string
   author_id?: number
+  day_month: string
 }
 
 export interface PeopleUpdateDto {
@@ -33,4 +35,5 @@ export interface PeopleUpdateDto {
   nationality?: string | null
   profession?: string | null
   biography: string
+  day_month: string
 }

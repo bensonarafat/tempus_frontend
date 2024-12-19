@@ -10,6 +10,7 @@ import SuccessAlert from '@/components/SuccessAlert.vue'
 import ErrorAlert from '@/components/ErrorAlert.vue'
 import QuillEditorComponent from '@/components/QuillEditorComponent.vue'
 import ImageUploader from '@/components/ImageUploader.vue'
+import { getMonthDay } from '@/stores/helpers/date-utils'
 
 const route = useRoute()
 const router = useRouter()
@@ -84,7 +85,7 @@ const handleSubmit = async () => {
     title: title.value!,
     start_date: start_date.value!,
     end_date: end_date.value,
-    category_ids: JSON.stringify(select_categories.value),
+    category_ids: select_categories.value,
     source: source.value,
     content: content.value!,
     important: important.value!,
@@ -96,6 +97,7 @@ const handleSubmit = async () => {
     lat: addressData.value?.coordinates.lat,
     lng: addressData.value?.coordinates.lng,
     address: addressData.value?.formattedAddress,
+    day_month: getMonthDay(start_date.value),
   }
   const id = route.params.id as any
   await eventStore.updateEvent(id, eventDto, imageFile.value)
@@ -120,7 +122,7 @@ const fetchEvent = async (id: number) => {
       start_date.value = fetchedEvent.start_date
       end_date.value = fetchedEvent.end_date ?? ''
       source.value = fetchedEvent.source ?? ''
-      select_categories.value = JSON.parse(fetchedEvent.category_ids)
+      select_categories.value = fetchedEvent.category_ids
       important.value = fetchedEvent.important
 
       //others

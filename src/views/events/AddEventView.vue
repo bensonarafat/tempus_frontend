@@ -12,6 +12,7 @@ import QuillEditorComponent from '@/components/QuillEditorComponent.vue'
 import ImageUploader from '@/components/ImageUploader.vue'
 import { useUserStore } from '@/stores/modules/user'
 import type { User } from '@/stores/interfaces/user.interface'
+import { getMonthDay } from '@/stores/helpers/date-utils'
 
 const categoryStore = useCategoryStore()
 const eventStore = useEventStore()
@@ -93,7 +94,7 @@ const handleSubmit = async () => {
     title: title.value!,
     start_date: start_date.value!,
     end_date: end_date.value,
-    category_ids: JSON.stringify(select_categories.value),
+    category_ids: select_categories.value,
     source: source.value,
     content: content.value!,
     important: important.value!,
@@ -106,6 +107,7 @@ const handleSubmit = async () => {
     lng: addressData.value?.coordinates.lng,
     address: addressData.value?.formattedAddress,
     author_id: user.id,
+    day_month: getMonthDay(start_date.value),
   }
 
   await eventStore.addEvent(eventDto, imageFile.value)

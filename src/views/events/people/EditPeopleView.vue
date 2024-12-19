@@ -9,6 +9,7 @@ import ImageUploader from '@/components/ImageUploader.vue'
 import { useUserStore } from '@/stores/modules/user'
 import type { User } from '@/stores/interfaces/user.interface'
 import { useRoute, useRouter } from 'vue-router'
+import { getMonthDay } from '@/stores/helpers/date-utils'
 
 const route = useRoute()
 const router = useRouter()
@@ -68,6 +69,7 @@ const handleSubmit = async () => {
     nationality: nationality.value,
     biography: content.value!,
     author_id: user.id,
+    day_month: getMonthDay(birth_date.value),
   }
   const id = route.params.id as any
   await peopleStore.updatePeople(id, peopleDto, imageFile.value)
