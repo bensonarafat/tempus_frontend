@@ -29,6 +29,7 @@ coverage
 
 *.tsbuildinfo
 
+.env
 .env.dev
 .env.prod
 .env.production
