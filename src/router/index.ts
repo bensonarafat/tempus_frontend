@@ -38,6 +38,7 @@ import EditUserView from '@/views/users/EditUserView.vue'
 // Profile
 import ChangePasswordView from '@/views/profile/ChangePasswordView.vue'
 import ProfileView from '@/views/profile/ProfileView.vue'
+import { useAuthStore } from '@/stores/modules/auth'
 
 const router = createRouter({
   history: createWebHistory(),
@@ -198,6 +199,12 @@ const router = createRouter({
       beforeEnter: authGuard,
     },
   ],
+})
+
+router.beforeEach(async (to, from, next) => {
+  const authStore = useAuthStore()
+  await authStore.checkCurrentAuthStatus()
+  next()
 })
 
 export default router

@@ -1,6 +1,7 @@
 import { supabase } from '@/services/supabase'
 import type { Provider, Session, User } from '@supabase/supabase-js'
 import { defineStore } from 'pinia'
+const base_url = import.meta.env.VITE_BASE_URL
 
 interface LoginResult {
   success: boolean
@@ -116,8 +117,7 @@ export const useAuthStore = defineStore('auth', {
         const { data, error } = await supabase.auth.signInWithOAuth({
           provider: provider,
           options: {
-            scopes: 'email',
-            redirectTo: import.meta.env.VITE_BASE_URL + 'oauth-callback',
+            redirectTo: base_url + 'oauth-callback',
           },
         })
 

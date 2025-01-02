@@ -7,7 +7,6 @@ import { useRouter, useRoute } from 'vue-router'
 // Component state
 const email = ref('')
 const password = ref('')
-const rememberMe = ref(false)
 const error = ref('')
 const isLoading = ref(false)
 
@@ -137,7 +136,7 @@ onMounted(() => {
             <button
               type="button"
               @click="handleGoogleLogin"
-              class="text-gray-900 border border-gray-200 hover:bg-gray-200 focus:ring-4 focus:outline-none focus:ring-[#4285F4]/50 font-medium rounded-lg text-sm px-5 py-2.5 text-center inline-flex items-center dark:focus:ring-[#4285F4]/55 me-2 mb-2"
+              class="text-gray-900 border border-gray-200 hover:bg-gray-200 focus:ring-4 focus:outline-none focus:ring-[#4285F4]/50 font-medium rounded-lg text-sm px-5 py-2.5 text-center inline-flex items-center dark:bg-gray-200 dark:focus:ring-[#4285F4]/55 me-2 mb-2"
             >
               <svg
                 class="w-4 h-4 me-2"
@@ -157,7 +156,7 @@ onMounted(() => {
             <button
               type="button"
               @click="handleAppleLogin"
-              class="text-gray-900 border border-gray-200 hover:bg-gray-200 focus:ring-4 focus:outline-none focus:ring-[#050708]/50 font-medium rounded-lg text-sm px-5 py-2.5 text-center inline-flex items-center dark:focus:ring-[#050708]/50 dark:hover:bg-[#050708]/30 me-2 mb-2"
+              class="text-gray-900 border border-gray-200 hover:bg-gray-200 focus:ring-4 focus:outline-none focus:ring-[#4285F4]/50 font-medium rounded-lg text-sm px-5 py-2.5 text-center inline-flex items-center dark:bg-gray-200 dark:focus:ring-[#4285F4]/55 me-2 mb-2"
             >
               <svg
                 class="w-5 h-5 me-2 -ms-1"
@@ -220,25 +219,10 @@ onMounted(() => {
               />
             </div>
             <div class="flex items-center justify-between">
-              <div class="flex items-start">
-                <div class="flex items-center h-5">
-                  <input
-                    id="remember"
-                    aria-describedby="remember"
-                    type="checkbox"
-                    class="w-4 h-4 border border-gray-300 rounded bg-gray-50 focus:ring-3 focus:ring-primary-300 dark:bg-gray-700 dark:border-gray-600 dark:focus:ring-primary-600 dark:ring-offset-gray-800"
-                    required
-                    v-model="rememberMe"
-                  />
-                </div>
-                <div class="ml-3 text-sm">
-                  <label for="remember" class="text-gray-500 dark:text-gray-300">Remember me</label>
-                </div>
-              </div>
               <a
                 href="javascript:void(0)"
                 @click="handleForgotPassword"
-                class="text-sm font-medium text-primary-600 hover:underline dark:text-primary-500"
+                class="text-sm font-medium text-primary-600 dark:text-gray-300 hover:underline"
                 >Forgot password?</a
               >
             </div>
